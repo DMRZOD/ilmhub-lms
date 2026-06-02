@@ -57,7 +57,7 @@ jobs:
             backend/pnpm-lock.yaml
             frontend/pnpm-lock.yaml
 
-      # ---- Backend: install, migrate, seed, build, start ----
+      # ---- Backend: install, migrate, seed, build ----
       - name: Install backend
         working-directory: backend
         run: pnpm install --frozen-lockfile
@@ -67,41 +67,41 @@ jobs:
           pnpm prisma:generate
           pnpm db:test:deploy
           pnpm db:seed
-      - name: Build & start backend
+      - name: Build backend
         working-directory: backend
-        run: |
-          pnpm build
-          pnpm start:prod &
-          for i in $(seq 1 60); do
-            curl -sf http://localhost:3001/health && break
-            sleep 2
-          done
+        run: pnpm build
 
-      # ---- Frontend: install, build (with API url), start ----
+      # ---- Frontend: install, build (with API url) ----
       - name: Install frontend
         working-directory: frontend
         run: pnpm install --frozen-lockfile
-      - name: Build & start frontend
+      - name: Build frontend
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: http://localhost:3001
-        run: |
-          pnpm build
-          pnpm start &
-          for i in $(seq 1 60); do
-            curl -sf http://localhost:3000 && break
-            sleep 2
-          done
+        run: pnpm build
 
-      # ---- Playwright ----
       - name: Install Playwright browsers
         working-directory: frontend
         run: pnpm exec playwright install --with-deps chromium
-      - name: Run Playwright
+
+      # Start both servers and run Playwright in ONE step so the backgrounded
+      # processes stay alive for the duration of the test run (a `&` process
+      # started in a separate step is killed when that step ends).
+      - name: Start servers & run Playwright
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
-        run: pnpm test:e2e
+        run: |
+          ( cd "$GITHUB_WORKSPACE/backend" && pnpm start:prod > /tmp/backend.log 2>&1 ) &
+          ( cd "$GITHUB_WORKSPACE/frontend" && pnpm start > /tmp/frontend.log 2>&1 ) &
+          echo "Waiting for backend on :3001 ..."
+          for i in $(seq 1 60); do curl -sf http://localhost:3001/health >/dev/null && break; sleep 2; done
+          echo "Waiting for frontend on :3000 ..."
+          for i in $(seq 1 60); do curl -sf http://localhost:3000 >/dev/null && break; sleep 2; done
+          curl -sf http://localhost:3001/health >/dev/null || { echo "::error::backend not up"; cat /tmp/backend.log; exit 1; }
+          curl -sf http://localhost:3000 >/dev/null || { echo "::error::frontend not up"; cat /tmp/frontend.log; exit 1; }
+          pnpm test:e2e
 
       - name: Upload report
         if: always()

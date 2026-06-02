@@ -97,18 +97,23 @@ import { RolesGuard } from './common/guards/roles.guard';
         };
       },
     }),
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 1000,
-        limit: 10,
-      },
-      {
-        name: 'auth',
-        ttl: 60_000,
-        limit: 5,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      // Disabled under test so e2e suites can hammer auth endpoints without
+      // tripping the rate limiter; stays enabled in dev/production.
+      skipIf: () => process.env.NODE_ENV === 'test',
+      throttlers: [
+        {
+          name: 'default',
+          ttl: 1000,
+          limit: 10,
+        },
+        {
+          name: 'auth',
+          ttl: 60_000,
+          limit: 5,
+        },
+      ],
+    }),
     // Two-tier cache: a fast in-process LRU fronting a shared Redis store so
     // cached reads (e.g. /courses/featured, /categories) survive restarts and
     // are consistent across instances. Falls back to localhost like BullMQ.

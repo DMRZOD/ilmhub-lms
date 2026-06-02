@@ -53,6 +53,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: |
+            backend/pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
 
       # ---- Backend: install, migrate, seed, build, start ----
       - name: Install backend

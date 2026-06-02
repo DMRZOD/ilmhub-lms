@@ -95,13 +95,24 @@ jobs:
         run: |
           ( cd "$GITHUB_WORKSPACE/backend" && pnpm start:prod > /tmp/backend.log 2>&1 ) &
           ( cd "$GITHUB_WORKSPACE/frontend" && pnpm start > /tmp/frontend.log 2>&1 ) &
-          echo "Waiting for backend on :3001 ..."
+          echo "Waiting for backend /health on :3001 ..."
           for i in $(seq 1 60); do curl -sf http://localhost:3001/health >/dev/null && break; sleep 2; done
+          # Readiness = the port answers HTTP (any status); the home page may SSR
+          # a non-2xx, which is a test concern, not a "server down" concern.
           echo "Waiting for frontend on :3000 ..."
-          for i in $(seq 1 60); do curl -sf http://localhost:3000 >/dev/null && break; sleep 2; done
-          curl -sf http://localhost:3001/health >/dev/null || { echo "::error::backend not up"; cat /tmp/backend.log; exit 1; }
-          curl -sf http://localhost:3000 >/dev/null || { echo "::error::frontend not up"; cat /tmp/frontend.log; exit 1; }
+          for i in $(seq 1 60); do curl -s -o /dev/null http://localhost:3000 && break; sleep 2; done
+          echo "=== backend log (startup) ==="; tail -n 30 /tmp/backend.log || true
+          echo "=== frontend log (startup) ==="; tail -n 30 /tmp/frontend.log || true
+          curl -sf http://localhost:3001/health >/dev/null || { echo "::error::backend /health not responding"; cat /tmp/backend.log; exit 1; }
+          curl -s -o /dev/null http://localhost:3000 || { echo "::error::frontend port not responding"; cat /tmp/frontend.log; exit 1; }
+          set +e
           pnpm test:e2e
+          code=$?
+          if [ $code -ne 0 ]; then
+            echo "=== backend log (full) ==="; cat /tmp/backend.log
+            echo "=== frontend log (full) ==="; cat /tmp/frontend.log
+          fi
+          exit $code
 
       - name: Upload report
         if: always()

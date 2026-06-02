@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
+import { loginViaUi, SEED_ACCOUNTS } from "./helpers";
+
 test.describe("Catalog", () => {
+  // The catalog issues authenticated requests (e.g. /users/me, favorites); when
+  // logged out those 401 and the api-client bounces to /login. Sign in first so
+  // we exercise real authenticated browsing.
+  test.beforeEach(async ({ page }) => {
+    await loginViaUi(page, SEED_ACCOUNTS.student);
+  });
+
   test("lists courses and exposes search + sort controls", async ({ page }) => {
     await page.goto("/courses");
 
@@ -8,8 +17,8 @@ test.describe("Catalog", () => {
     const cards = page.locator('a[href^="/courses/"]');
     await expect(cards.first()).toBeVisible();
 
-    await expect(page.getByPlaceholder("Kurs qidiring...")).toBeVisible();
-    // Radix Select trigger for sorting.
+    // The placeholder appears on both the desktop and mobile search inputs.
+    await expect(page.getByPlaceholder("Kurs qidiring...").first()).toBeVisible();
     await expect(page.getByRole("combobox").first()).toBeVisible();
   });
 
@@ -24,7 +33,7 @@ test.describe("Catalog", () => {
 
   test("search narrows the catalog via the URL query", async ({ page }) => {
     await page.goto("/courses");
-    await page.getByPlaceholder("Kurs qidiring...").fill("react");
+    await page.getByPlaceholder("Kurs qidiring...").first().fill("react");
     // nuqs writes the query to the URL (debounced).
     await expect(page).toHaveURL(/react/i, { timeout: 10_000 });
   });

@@ -18,7 +18,8 @@ export async function loginViaUi(
   await page.goto("/login");
   await page.locator("#email").fill(account.email);
   await page.locator("#password").fill(account.password);
-  await page.getByRole("button", { name: "Kirish" }).click();
+  // exact: true — "Kirish" otherwise also matches "Google bilan kirish".
+  await page.getByRole("button", { name: "Kirish", exact: true }).click();
   await expect(page).not.toHaveURL(/\/login/);
 }
 

@@ -7,14 +7,16 @@ test.describe("Authentication", () => {
     await page.goto("/login");
     await expect(page.locator("#email")).toBeVisible();
     await expect(page.locator("#password")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Kirish" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Kirish", exact: true }),
+    ).toBeVisible();
   });
 
   test("shows an error toast on invalid credentials", async ({ page }) => {
     await page.goto("/login");
     await page.locator("#email").fill("nobody@example.com");
     await page.locator("#password").fill("wrong-password");
-    await page.getByRole("button", { name: "Kirish" }).click();
+    await page.getByRole("button", { name: "Kirish", exact: true }).click();
     // Sonner renders a toast; we stay on /login.
     await expect(page.locator("[data-sonner-toast]")).toBeVisible({
       timeout: 10_000,
@@ -30,7 +32,9 @@ test.describe("Authentication", () => {
     await page.locator("#confirmPassword").fill("Passw0rd!");
     // STUDENT role is selected by default; accept the terms to enable submit.
     await page.getByRole("checkbox").click();
-    await page.getByRole("button", { name: "Ro'yxatdan o'tish" }).click();
+    await page
+      .getByRole("button", { name: "Ro'yxatdan o'tish", exact: true })
+      .click();
 
     // Success surfaces a toast and navigates away from /register.
     await expect(page.getByText("Akkaunt yaratildi")).toBeVisible({

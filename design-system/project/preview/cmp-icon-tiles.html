@@ -1,0 +1,29 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Icon tiles</title>
+<link rel="stylesheet" href="_preview.css">
+<style>
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .tile { display: flex; align-items: center; justify-content: center; border-radius: 14px; }
+  .ink  { background: var(--ilm-ink); color: #fff; }
+  .surf { background: var(--ilm-surface); color: var(--ilm-ink); }
+  .lg   { width: 56px; height: 56px; }
+  .md   { width: 44px; height: 44px; border-radius: 12px; }
+  .sm   { width: 36px; height: 36px; border-radius: 10px; }
+  .icon { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .gloss { font-size: 12px; color: var(--fg-3); font-weight: 500; padding-top: 6px; }
+</style></head>
+<body><div class="card">
+  <div class="row">
+    <div class="tile ink lg"><svg class="icon" width="24" height="24" viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg></div>
+    <div class="tile ink lg"><svg class="icon" width="24" height="24" viewBox="0 0 24 24"><path d="M2 12l10-6 10 6-10 6z"/><path d="M6 14v4c0 1 3 3 6 3s6-2 6-3v-4"/></svg></div>
+    <div class="tile ink lg"><svg class="icon" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg></div>
+    <div class="tile ink lg"><svg class="icon" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M9 13l-2 9 5-3 5 3-2-9"/></svg></div>
+    <div class="tile surf lg"><svg class="icon" width="24" height="24" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 1 1-3.8-7"/><path d="M21 4v6h-6"/></svg></div>
+    <div class="tile surf lg"><svg class="icon" width="24" height="24" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></div>
+    <div class="tile surf md"><svg class="icon" width="20" height="20" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></div>
+    <div class="tile surf md"><svg class="icon" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+    <div class="tile surf sm"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+    <div class="tile surf sm"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+  </div>
+  <div class="gloss">Ink tiles for primary actions / dashboard stats. Surface tiles for chrome / utility. 14px and 12px radii.</div>
+</div></body></html>

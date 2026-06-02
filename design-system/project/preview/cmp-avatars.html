@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Avatars</title>
+<link rel="stylesheet" href="_preview.css">
+<style>
+  .row { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+  .ava { background: var(--ilm-border); border-radius: 999px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--fg-2); overflow: hidden; }
+  .sm  { width: 32px; height: 32px; font-size: 12px; }
+  .md  { width: 48px; height: 48px; font-size: 16px; }
+  .lg  { width: 80px; height: 80px; font-size: 24px; }
+  .stack { display: flex; align-items: center; }
+  .stack .ava { box-shadow: 0 0 0 3px var(--ilm-paper); margin-left: -10px; }
+  .stack .ava:first-child { margin-left: 0; }
+  .dotted { background: linear-gradient(135deg,#E5E7EB,#F5F5F5); }
+  .meta { font-size: 11px; color: var(--fg-3); font-weight: 600; letter-spacing: 0.04em; margin-top: 6px; }
+</style></head>
+<body><div class="card">
+  <div class="row">
+    <div><div class="ava sm">AK</div><div class="meta">32px</div></div>
+    <div><div class="ava md">MY</div><div class="meta">48px</div></div>
+    <div><div class="ava lg">BR</div><div class="meta">80px</div></div>
+    <div>
+      <div class="stack">
+        <div class="ava md dotted">AK</div>
+        <div class="ava md" style="background:#0A0A0A;color:#fff">MY</div>
+        <div class="ava md">BR</div>
+        <div class="ava md" style="background:#F5F5F5">DA</div>
+        <div class="ava md" style="background:#0A0A0A;color:#fff;font-size:12px">+8</div>
+      </div>
+      <div class="meta">Stacked group</div>
+    </div>
+  </div>
+</div></body></html>

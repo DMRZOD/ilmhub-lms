@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Color · Semantic</title>
+<link rel="stylesheet" href="_preview.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .item { background: var(--bg-2); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .pair { display: flex; align-items: center; gap: 10px; }
+  .dot  { width: 28px; height: 28px; border-radius: 999px; }
+  .tint { width: 28px; height: 28px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ilm-border); }
+  .name { font-size: 13px; font-weight: 700; color: var(--fg-1); }
+  .hex  { font-size: 11px; font-weight: 500; color: var(--fg-3); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+</style></head>
+<body><div class="card">
+  <div class="grid">
+    <div class="item">
+      <div class="pair">
+        <div class="dot" style="background:var(--ilm-success)"></div>
+        <div><div class="name">Success</div><div class="hex">#10B981</div></div>
+      </div>
+      <span class="pill" style="background:var(--ilm-success-bg); color:var(--ilm-success)">Tugatildi</span>
+    </div>
+    <div class="item">
+      <div class="pair">
+        <div class="dot" style="background:var(--ilm-warning)"></div>
+        <div><div class="name">Warning</div><div class="hex">#F59E0B</div></div>
+      </div>
+      <span class="pill" style="background:var(--ilm-warning-bg); color:var(--ilm-warning)">Diqqat</span>
+    </div>
+    <div class="item">
+      <div class="pair">
+        <div class="dot" style="background:var(--ilm-error)"></div>
+        <div><div class="name">Error</div><div class="hex">#EF4444</div></div>
+      </div>
+      <span class="pill" style="background:var(--ilm-error-bg); color:var(--ilm-error)">Xato</span>
+    </div>
+    <div class="item">
+      <div class="pair">
+        <div class="dot" style="background:var(--ilm-info)"></div>
+        <div><div class="name">Info</div><div class="hex">#3B82F6</div></div>
+      </div>
+      <span class="pill" style="background:var(--ilm-info-bg); color:var(--ilm-info)">Yangi</span>
+    </div>
+  </div>
+</div></body></html>

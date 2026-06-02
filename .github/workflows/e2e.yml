@@ -1,0 +1,109 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Spin up the full stack (Postgres + Redis + backend + frontend) inside the CI
+# job and run Playwright against localhost. No external preview deploy needed.
+jobs:
+  playwright:
+    name: Playwright (full stack)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ilmhub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ilmhub_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/ilmhub_test
+      JWT_SECRET: test-jwt-secret-at-least-sixteen-chars
+      JWT_REFRESH_SECRET: test-jwt-refresh-secret-at-least-sixteen-chars
+      REDIS_URL: redis://localhost:6379
+      FRONTEND_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3000
+      PORT: "3001"
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # ---- Backend: install, migrate, seed, build, start ----
+      - name: Install backend
+        working-directory: backend
+        run: pnpm install --frozen-lockfile
+      - name: Prepare database
+        working-directory: backend
+        run: |
+          pnpm prisma:generate
+          pnpm db:test:deploy
+          pnpm db:seed
+      - name: Build & start backend
+        working-directory: backend
+        run: |
+          pnpm build
+          pnpm start:prod &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3001/health && break
+            sleep 2
+          done
+
+      # ---- Frontend: install, build (with API url), start ----
+      - name: Install frontend
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - name: Build & start frontend
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+        run: |
+          pnpm build
+          pnpm start &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3000 && break
+            sleep 2
+          done
+
+      # ---- Playwright ----
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run Playwright
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+        run: pnpm test:e2e
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

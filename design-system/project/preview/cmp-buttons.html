@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Buttons</title>
+<link rel="stylesheet" href="_preview.css">
+<style>
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    height: 48px; padding: 0 22px; border-radius: 12px;
+    font-family: 'Sora'; font-size: 15px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: 0; cursor: pointer;
+    transition: all 220ms cubic-bezier(0.22,1,0.36,1);
+  }
+  .btn:active { transform: scale(0.97); }
+  .primary   { background: var(--ilm-ink); color: var(--fg-inv); }
+  .primary:hover   { background: var(--ilm-ink-soft); }
+  .secondary { background: var(--ilm-paper); color: var(--ilm-ink); box-shadow: inset 0 0 0 1px var(--ilm-ink); }
+  .ghost     { background: transparent; color: var(--ilm-ink); }
+  .ghost:hover { background: var(--ilm-surface); }
+  .destructive { background: var(--ilm-error); color: #fff; }
+  .icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+</style></head>
+<body><div class="card">
+  <div class="row">
+    <button class="btn primary">Sotib olish <svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+    <button class="btn secondary">Davom etish</button>
+    <button class="btn ghost">Bekor qilish</button>
+    <button class="btn destructive">O'chirish</button>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button class="btn primary" style="height:36px;padding:0 16px;font-size:13px;border-radius:10px">Yangi kurs</button>
+    <button class="btn secondary" style="height:36px;padding:0 16px;font-size:13px;border-radius:10px">Filtrlar</button>
+    <button class="btn primary" style="width:48px;height:48px;padding:0;border-radius:14px">
+      <svg class="icon" style="width:20px;height:20px" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button class="btn ghost" style="width:48px;height:48px;padding:0;border-radius:14px;background:var(--ilm-surface)">
+      <svg class="icon" style="width:20px;height:20px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+    </button>
+  </div>
+</div></body></html>

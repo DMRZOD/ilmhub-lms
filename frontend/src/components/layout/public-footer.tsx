@@ -1,0 +1,150 @@
+import Image from "next/image";
+import Link from "next/link";
+import { Mail, MapPin, Phone, Send, Camera, Play, Briefcase } from "lucide-react";
+
+import { Icon } from "@/components/ui/icon";
+
+const columns: { title: string; links: { label: string; href: string }[] }[] = [
+  {
+    title: "Kompaniya",
+    links: [
+      { label: "Biz haqimizda", href: "/about" },
+      { label: "Ustoz bo'lish", href: "/student/become-instructor" },
+      { label: "Karyera", href: "/career" },
+      { label: "Hamkorlik", href: "/partnership" },
+      { label: "Yangiliklar", href: "/blog" },
+    ],
+  },
+  {
+    title: "Kurslar",
+    links: [
+      { label: "Frontend", href: "/courses?category=frontend" },
+      { label: "Backend", href: "/courses?category=backend" },
+      { label: "Dizayn", href: "/courses?category=design" },
+      { label: "Barcha kategoriyalar", href: "/courses" },
+    ],
+  },
+  {
+    title: "Yordam",
+    links: [
+      { label: "Yordam markazi", href: "/help" },
+      { label: "Sertifikatlar", href: "/student/certificates" },
+      { label: "FAQ", href: "/#faq" },
+      { label: "Aloqa", href: "/contact" },
+    ],
+  },
+];
+
+const socials = [
+  { label: "Telegram", href: "https://t.me/ilmhub", icon: Send },
+  { label: "Instagram", href: "https://instagram.com/ilmhub", icon: Camera },
+  { label: "YouTube", href: "https://youtube.com/@ilmhub", icon: Play },
+  { label: "LinkedIn", href: "https://linkedin.com/company/ilmhub", icon: Briefcase },
+];
+
+export function PublicFooter() {
+  return (
+    <footer className="bg-ilm-ink text-ilm-paper">
+      <div className="mx-auto max-w-7xl px-sp-4 py-sp-16 md:px-sp-6 md:py-sp-20">
+        <div className="grid gap-sp-10 sm:grid-cols-2 md:grid-cols-4">
+          {columns.map((col) => (
+            <div key={col.title} className="flex flex-col gap-sp-4">
+              <h3 className="text-t-14 font-bold uppercase tracking-ilm-wide text-ilm-paper">
+                {col.title}
+              </h3>
+              <ul className="flex flex-col gap-sp-3">
+                {col.links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-t-14 font-medium text-white/70 transition-colors duration-base ease-ilm-out hover:text-white"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          <div className="flex flex-col gap-sp-4 sm:col-span-2 md:col-span-1">
+            <h3 className="text-t-14 font-bold uppercase tracking-ilm-wide text-ilm-paper">
+              Aloqa
+            </h3>
+            <ul className="flex flex-col gap-sp-3 text-t-14 font-medium text-white/70">
+              <li className="flex items-center gap-sp-2">
+                <Icon icon={Mail} size={16} className="text-white/70" />
+                <a
+                  href="mailto:salom@ilmhub.uz"
+                  className="transition-colors hover:text-white"
+                >
+                  salom@ilmhub.uz
+                </a>
+              </li>
+              <li className="flex items-center gap-sp-2">
+                <Icon icon={Phone} size={16} className="text-white/70" />
+                <a
+                  href="tel:+998901234567"
+                  className="transition-colors hover:text-white"
+                >
+                  +998 90 123 45 67
+                </a>
+              </li>
+              <li className="flex items-start gap-sp-2">
+                <Icon icon={MapPin} size={16} className="mt-0.5 text-white/70" />
+                <span>Toshkent, Mirzo Ulug&apos;bek tumani</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-sp-12 flex flex-col items-start gap-sp-6 border-t border-white/10 pt-sp-8 md:flex-row md:items-center md:justify-between">
+          <Link href="/" aria-label="IlmHub bosh sahifa">
+            <Image
+              src="/logo-white.svg"
+              alt="IlmHub"
+              width={168}
+              height={31}
+              className="h-7 w-auto"
+            />
+          </Link>
+
+          <div className="flex items-center gap-sp-2">
+            {socials.map((s) => (
+              <a
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-ilm-full text-white/70 transition-colors duration-base ease-ilm-out hover:bg-white/10 hover:text-white"
+              >
+                <Icon icon={s.icon} size={18} />
+              </a>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-sp-3 md:flex-row md:items-center md:gap-sp-6">
+            <div className="flex flex-wrap gap-x-sp-4 gap-y-sp-2 text-t-14 text-white/60">
+              <Link
+                href="/privacy"
+                className="transition-colors hover:text-white"
+              >
+                Maxfiylik siyosati
+              </Link>
+              <Link
+                href="/terms"
+                className="transition-colors hover:text-white"
+              >
+                Foydalanish shartlari
+              </Link>
+            </div>
+            <p className="text-t-14 text-white/60">
+              © 2026 IlmHub. Barcha huquqlar himoyalangan.
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

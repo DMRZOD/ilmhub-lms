@@ -16,5 +16,6 @@
   "moduleNameMapper": {
     "^puppeteer$": "<rootDir>/test/mocks/puppeteer.ts"
   },
-  "testTimeout": 30000
+  "testTimeout": 30000,
+  "maxWorkers": 1
 }

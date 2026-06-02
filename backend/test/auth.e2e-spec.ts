@@ -48,13 +48,17 @@ d('Auth (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await prisma.$executeRawUnsafe(
-      'TRUNCATE TABLE "RefreshToken", "EmailVerificationToken", "PasswordResetToken", "User" RESTART IDENTITY CASCADE;',
-    );
+    // Remove only THIS suite's users (cascades to their tokens). A global
+    // TRUNCATE ... CASCADE would also wipe seeded courses (Course.instructorId
+    // -> User) that the other e2e suites read, which made the suite flaky when
+    // Jest ran spec files in parallel against the shared database.
+    await prisma.user.deleteMany({
+      where: { email: { endsWith: '@auth-tester.ilmhub.uz' } },
+    });
   });
 
   const baseUser = {
-    email: 'alice@ilmhub.uz',
+    email: 'alice@auth-tester.ilmhub.uz',
     password: 'sup3rsecret',
     name: 'Alice',
     role: 'STUDENT' as const,

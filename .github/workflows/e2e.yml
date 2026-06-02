@@ -42,7 +42,8 @@ jobs:
       REDIS_URL: redis://localhost:6379
       FRONTEND_URL: http://localhost:3000
       CORS_ORIGIN: http://localhost:3000
-      PORT: "3001"
+      # NOTE: do not set a job-level PORT — `next start` also reads PORT and would
+      # collide with the backend on 3001. Ports are set per-server in the run step.
       NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
@@ -93,8 +94,8 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
         run: |
-          ( cd "$GITHUB_WORKSPACE/backend" && pnpm start:prod > /tmp/backend.log 2>&1 ) &
-          ( cd "$GITHUB_WORKSPACE/frontend" && pnpm start > /tmp/frontend.log 2>&1 ) &
+          ( cd "$GITHUB_WORKSPACE/backend" && PORT=3001 pnpm start:prod > /tmp/backend.log 2>&1 ) &
+          ( cd "$GITHUB_WORKSPACE/frontend" && PORT=3000 pnpm start > /tmp/frontend.log 2>&1 ) &
           echo "Waiting for backend /health on :3001 ..."
           for i in $(seq 1 60); do curl -sf http://localhost:3001/health >/dev/null && break; sleep 2; done
           # Readiness = the port answers HTTP (any status); the home page may SSR

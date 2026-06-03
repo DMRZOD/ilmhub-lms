@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import { ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,7 +31,18 @@ export function StepThumbnail({
       save({ thumbnailUrl: res.url });
       toast.success("Rasm yuklandi");
     },
-    onError: () => toast.error("Rasmni yuklab bo'lmadi"),
+    onError: (err) => {
+      const code = isAxiosError(err)
+        ? (err.response?.data as { message?: string } | undefined)?.message
+        : undefined;
+      const messages: Record<string, string> = {
+        storage_not_configured:
+          "Rasm xotirasi sozlanmagan (Supabase). Administrator bilan bog'laning.",
+        image_too_large: "Rasm hajmi 5 MB dan oshmasligi kerak",
+        unsupported_image_type: "Faqat PNG, JPG yoki WebP qabul qilinadi",
+      };
+      toast.error((code && messages[code]) || "Rasmni yuklab bo'lmadi");
+    },
   });
 
   const handleFile = (file?: File | null) => {

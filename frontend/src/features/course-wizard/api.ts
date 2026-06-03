@@ -113,9 +113,10 @@ export async function reorderLessons(sectionId: string, orderedIds: string[]) {
 export async function uploadCourseImage(file: File) {
   const form = new FormData();
   form.append("file", file);
-  const { data } = await api.post("/uploads/image", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  // Do NOT set Content-Type manually: the browser must add the
+  // `multipart/form-data; boundary=...` header itself, otherwise the boundary
+  // is missing and the server (multer) can't parse the upload.
+  const { data } = await api.post("/uploads/image", form);
   return uploadImageResponseSchema.parse(data);
 }
 

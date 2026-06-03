@@ -1,175 +1,159 @@
-# IlmHub — Production Deployment Guide
+# IlmHub — деплой (Vercel + Railway, бесплатные домены)
 
-Architecture: **Vercel** (frontend, `ilmhub.uz`) + **Railway** (backend, `api.ilmhub.uz`)
-+ **Supabase** (Postgres & Storage) + managed **Redis** (BullMQ) + **Mux** (video) +
-**Resend** (email) + **Sentry** (errors).
+Без покупки домена. Бэкенд — на Railway (адрес `xxx.up.railway.app`), фронтенд — на
+Vercel (адрес `yyy.vercel.app`). БД и остальное (Supabase, Mux, Google, Storage) уже
+настроены в локальном `backend/.env` — мы просто скопируем эти значения в Railway.
+Новое, что нужно поднять, — только **Redis** для очередей.
 
-> The repo is already made deploy-ready in code (this commit). The steps below are
-> the **manual** account/dashboard/DNS work — they cannot be done from the codebase.
-> Items marked **🔧 manual** are yours; everything in `railway.json`, `next.config.ts`,
-> `.env.example`, etc. is already in the repo.
-
----
-
-## 0. Prerequisites
-- GitHub repo pushed: `github.com/DMRZOD/ilmhub-lms`, default branch `main`.
-- Accounts: Vercel, Railway, Supabase, Mux, Resend, Sentry, an uptime monitor
-  (UptimeRobot or BetterStack), and access to DNS for `ilmhub.uz`.
-- Generate two JWT secrets: `openssl rand -base64 32` (run twice).
+Порядок такой: **сначала бэкенд (получим его адрес) → потом фронт (дадим ему адрес
+бэкенда) → потом свяжем их обратно**.
 
 ---
 
-## 1. 🔧 Frontend — Vercel
-1. **New Project** → import `DMRZOD/ilmhub-lms`.
-2. **Root Directory = `frontend`**. Framework auto-detects Next.js; pnpm auto-detected
-   from the lockfile + `packageManager` field.
-3. **Environment Variables** (Production **and** Preview):
-   | Variable | Value |
-   | --- | --- |
-   | `NEXT_PUBLIC_API_URL` | `https://api.ilmhub.uz` |
-   | `NEXT_PUBLIC_SITE_URL` | `https://ilmhub.uz` |
-   | `NEXT_PUBLIC_SENTRY_DSN` | DSN of your Sentry **Next.js** project |
-   | `SENTRY_AUTH_TOKEN` | Sentry org auth token (source-map upload) |
-   | `SENTRY_ORG` | your Sentry org slug |
-   | `SENTRY_PROJECT` | your Sentry Next.js project slug |
-4. **Production branch = `main`** (default). **Preview deployments = on** for every PR
-   (default). Preview frontends can call the prod API — the backend CORS already
-   allows `*.vercel.app`.
-5. **Domains** → add `ilmhub.uz` and `www.ilmhub.uz` (DNS in §8). SSL is automatic.
+## ЧАСТЬ 1. Бэкенд на Railway
 
-> No `vercel.json` is needed — Root Directory + auto-detection cover it.
+### Шаг 1. Код уже в GitHub
+Изменения запушены в `main`. Railway сам пересобирает при каждом пуше — отдельно
+ничего пушить не нужно.
 
----
+### Шаг 2. Указать папку бэкенда
+В Railway открой свой сервис → **Settings** → найди **Root Directory** → впиши `backend`
+→ сохрани. (Railway возьмёт сборку из `backend/Dockerfile` и `backend/railway.json`.)
 
-## 2. 🔧 Backend — Railway
-1. **New Project → Deploy from GitHub repo** → pick `DMRZOD/ilmhub-lms`.
-2. Service settings → **Root Directory = `backend`**. Railway reads
-   [`backend/railway.json`](backend/railway.json): Nixpacks build, healthcheck `/health`,
-   and a **pre-deploy** `pnpm prisma migrate deploy` that runs migrations against
-   `DIRECT_URL` *before* the new release serves traffic.
-3. **Add Redis** — Railway → *New → Database → Redis* (or external Upstash). Copy its
-   connection string into `REDIS_URL`.
-4. **Variables** — set every var from [`backend/.env.example`](backend/.env.example):
+### Шаг 3. Добавить Redis
+В проекте нажми **New → Database → Add Redis**. Появится сервис «Redis». Открой его →
+вкладка **Variables** (или **Connect**) → скопируй значение `REDIS_URL` (вида
+`redis://default:...@...railway.internal:6379`). Понадобится на шаге 4.
 
-   | Variable | Production value / source |
-   | --- | --- |
-   | `NODE_ENV` | `production` |
-   | `PORT` | injected by Railway (leave unset) |
-   | `CORS_ORIGIN` | `https://ilmhub.uz,https://www.ilmhub.uz` |
-   | `DATABASE_URL` | Supabase **pooler** string (port 6543, `?pgbouncer=true`) |
-   | `DIRECT_URL` | Supabase **direct** string (port 5432) |
-   | `JWT_SECRET` / `JWT_REFRESH_SECRET` | `openssl rand -base64 32` (distinct) |
-   | `FRONTEND_URL` | `https://ilmhub.uz` |
-   | `REDIS_URL` | from the Redis service |
-   | `RESEND_API_KEY` / `EMAIL_FROM` | §6 — `notifications@ilmhub.uz` |
-   | `MUX_TOKEN_ID` … `MUX_WEBHOOK_SECRET` | §5 |
-   | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_STORAGE_BUCKET` | §4 (`course-assets`) |
-   | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud console |
-   | `GOOGLE_CALLBACK_URL` | `https://api.ilmhub.uz/auth/google/callback` |
-   | `SENTRY_DSN` | DSN of your Sentry **Node** project |
-   | `SWAGGER_ENABLED` | `true` (Swagger public at `/api/docs`) |
+### Шаг 4. Переменные окружения
+Открой **backend-сервис → вкладка Variables → кнопка «Raw Editor»**.
 
-5. After first deploy, check the logs: the pre-deploy step should print applied
-   migrations, and the healthcheck on `/health` should pass.
-6. **Domain** → add `api.ilmhub.uz`; Railway shows a CNAME target for DNS (§8).
-7. 🔧 In **Google Cloud Console**, add `https://api.ilmhub.uz/auth/google/callback`
-   as an authorized redirect URI.
+1. Открой на компьютере файл `backend/.env`, **скопируй всё его содержимое** и вставь
+   в Raw Editor.
+2. Затем **поправь/добавь** эти строки:
 
----
+   ```
+   NODE_ENV=production
+   REDIS_URL=<вставь сюда REDIS_URL из шага 3>
+   SWAGGER_ENABLED=true
+   ```
+   - `NODE_ENV` в локальном `.env` стоит `development` — поменяй на `production`.
+   - `REDIS_URL` в локальном `.env` указывает на `localhost` — **обязательно** замени
+     на адрес из шага 3, иначе часть страниц будет зависать.
 
-## 3. 🔧 Supabase (Postgres + Storage)
-- Use a **dedicated production project** (recommended) or reuse the current one.
-  Copy the **pooler** connection → `DATABASE_URL`, **direct** → `DIRECT_URL`.
-- **Storage** → create **one public bucket** named exactly what `SUPABASE_STORAGE_BUCKET`
-  is set to (`course-assets`). It must be **public-read** — the backend serves uploads
-  via `getPublicUrl`. The app stores everything in this one bucket under path prefixes
-  (`courses/<uuid>.webp`, `certificates/<number>.pdf`). **You do not need 4 buckets.**
-- Put `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` into Railway.
-- **RLS is not required**: Prisma connects via the direct/pooler URL with the service
-  role and bypasses RLS; the storage bucket is intentionally public-read.
-- **Backups**: enable Supabase Pro daily backups / PITR.
+3. `CORS_ORIGIN` и `FRONTEND_URL` пока не трогай — заполним в Части 3, когда узнаем
+   адрес фронта. (Превью-домены `*.vercel.app` и так разрешены автоматически.)
+
+Сохрани. Railway сразу начнёт новую сборку.
+
+### Шаг 5. Дать бэкенду публичный адрес
+**Settings → Networking → Generate Domain**. Railway выдаст адрес вида
+`https://ilmhub-lms-production.up.railway.app`. **Запиши его** — это `BACKEND_URL`.
+
+### Шаг 6. Дождаться сборки и проверить
+**Deployments** → открой последний деплой. В логах сборки должно пройти:
+`apt-get install chromium…` ✓ → `pnpm install` → `pnpm build` → pre-deploy
+`prisma migrate deploy` → старт → зелёный healthcheck `/health`.
+
+Проверь в браузере / терминале:
+```
+curl https://<BACKEND_URL>/health      # → {"ok":true,"db":"connected"}
+```
+Открой `https://<BACKEND_URL>/api/docs` — должна открыться документация API (Swagger).
+
+> Если сборка/старт падает — открой **View logs**, скопируй ошибку. Чаще всего это
+> незаполненная обязательная переменная (`DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`,
+> `JWT_REFRESH_SECRET`) или неверный `REDIS_URL`.
 
 ---
 
-## 4. 🔧 Mux (video, production)
-- Create a production **Access Token** → `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`.
-- Create a **Signing Key** → `MUX_SIGNING_KEY_ID`, `MUX_PRIVATE_KEY` (base64 RSA).
-- Add a **Webhook** → `https://api.ilmhub.uz/webhooks/mux` → `MUX_WEBHOOK_SECRET`.
+## ЧАСТЬ 2. Фронтенд на Vercel
 
-## 5. 🔧 Resend (email, production)
-- Verify the domain `ilmhub.uz` (add the SPF/DKIM DNS records Resend provides).
-- Create an API key → `RESEND_API_KEY`. Set `EMAIL_FROM=notifications@ilmhub.uz`.
+### Шаг 7. Создать проект
+Vercel → **Add New… → Project** → импортируй репозиторий `DMRZOD/ilmhub-lms`.
 
-## 6. 🔧 Monitoring
-- **Uptime**: UptimeRobot / BetterStack → monitor `https://api.ilmhub.uz/health`
-  (returns `{"ok":true,"db":"connected"}`) and `https://ilmhub.uz`.
-- **Sentry**: create two projects (Next.js + Node), paste DSNs into Vercel/Railway,
-  set alert rules. Verify by triggering a test error after launch.
-- **Logs**: Railway and Vercel have built-in log viewers; add a Logtail/BetterStack
-  drain if you want retention.
+### Шаг 8. Настройки проекта
+- **Root Directory = `frontend`** (нажми Edit рядом с Root Directory и выбери `frontend`).
+- Framework определится сам (Next.js).
 
----
+### Шаг 9. Переменные окружения (раздел Environment Variables)
+| Имя | Значение |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | адрес бэкенда из шага 5, напр. `https://ilmhub-lms-production.up.railway.app` |
+| `NEXT_PUBLIC_SITE_URL` | адрес фронта на Vercel (узнаешь после деплоя; можно вписать позже) |
 
-## 7. Migrations on deploy
-Handled automatically: `railway.json` `deploy.preDeployCommand` runs
-`pnpm prisma migrate deploy` before each release. Migrations are **never** run at
-Vercel build time (the frontend has no DB). To check status manually:
-`cd backend && pnpm prisma migrate status`.
+Sentry-переменные (`NEXT_PUBLIC_SENTRY_DSN` и т.д.) можно **оставить пустыми** — без них
+сайт работает, просто без сбора ошибок.
+
+### Шаг 10. Deploy
+Нажми **Deploy**. После сборки Vercel даст адрес вида `https://ilmhub-lms.vercel.app` —
+**запиши его**, это `FRONTEND_URL`.
 
 ---
 
-## 8. 🔧 DNS for `ilmhub.uz`
-`.uz` domains are managed via the local registrar (cctld.uz / e.g. ahost). Pick one:
+## ЧАСТЬ 3. Связать бэкенд и фронт
 
-**Option A — records at your current registrar (simplest):**
-| Host | Type | Value |
-| --- | --- | --- |
-| `@` (apex) | A | `76.76.21.21` (Vercel) |
-| `www` | CNAME | `cname.vercel-dns.com` |
-| `api` | CNAME | the target Railway shows for the custom domain |
+### Шаг 11. Прописать адрес фронта в Railway
+Вернись в **Railway → backend → Variables** и добавь/поправь:
+```
+FRONTEND_URL=https://<FRONTEND_URL>
+CORS_ORIGIN=https://<FRONTEND_URL>
+```
+Сохрани — Railway перезапустит сервис. (`FRONTEND_URL` нужен для ссылок в письмах и на
+странице проверки сертификата.)
 
-**Option B — Cloudflare nameservers:** move NS to Cloudflare, recreate the records
-above. Set the Vercel/Railway records to **DNS only (grey cloud)** to avoid SSL
-conflicts (or rely on Cloudflare CNAME-flattening for the apex). Cloudflare also holds
-the Resend SPF/DKIM and Mux records.
+### Шаг 12. (необязательно) Дописать SITE_URL на Vercel
+Vercel → проект → **Settings → Environment Variables** → задай
+`NEXT_PUBLIC_SITE_URL=https://<FRONTEND_URL>` и нажми **Redeploy** (чтобы карта сайта и
+SEO-ссылки указывали на реальный адрес).
 
-**Option C — apex CNAME flattening:** if the registrar supports ALIAS/ANAME on the
-apex, point it at `cname.vercel-dns.com` instead of the A record.
-
-SSL certificates are auto-provisioned by Vercel and Railway once DNS resolves.
-
----
-
-## 9. Deployment flow (CI/CD)
-- **Native Git integration** (no custom deploy workflow): pushing to `main` auto-deploys
-  prod on both Vercel and Railway; every PR gets a Vercel preview.
-- The existing `.github/workflows/ci.yml` and `e2e.yml` remain the quality gate
-  (lint, typecheck, tests, Playwright). They do not deploy.
+### Шаг 13. (необязательно) Google-вход и Mux-вебхук
+Эти фичи работают, только если поправить внешние сервисы:
+- **Google OAuth**: в Google Cloud Console добавь redirect URI
+  `https://<BACKEND_URL>/auth/google/callback`, и в Railway задай
+  `GOOGLE_CALLBACK_URL` на это же значение. Без этого обычный вход email+пароль всё равно
+  работает.
+- **Mux**: если будешь загружать новые видео, в Mux вебхук укажи
+  `https://<BACKEND_URL>/webhooks/mux`. Засеянные демо-видео играют и без этого.
 
 ---
 
-## 10. Payments — future task (NOT in this deploy)
-The checkout/webhook flow is still the **Step-24 mock**. Going live with real payments
-is a separate effort:
-1. 🔧 Obtain production merchant credentials (needs business onboarding, takes weeks):
-   - Payme: `PAYME_MERCHANT_ID`, `PAYME_KEY`
-   - Click: `CLICK_SERVICE_ID`, `CLICK_MERCHANT_ID`, `CLICK_SECRET`
-   - Uzum: `UZUM_MERCHANT_ID`, `UZUM_SECRET`
-   (placeholders already reserved in `.env.example` / env schema, currently unused)
-2. Replace the mock gateway + webhook with the real provider APIs + signature
-   verification.
-3. Then run the **real-card production payment test** from the launch checklist.
+## ЧАСТЬ 4. Проверка
+1. Открой `https://<FRONTEND_URL>` — сайт грузится.
+2. Войди демо-аккаунтом (см. корневой `README.md`): `student1@ilmhub.uz` / `Student123!`.
+3. Открой каталог, зайди в курс, запусти урок-видео.
+4. `https://<BACKEND_URL>/health` → `{"ok":true,...}`, `https://<BACKEND_URL>/api/docs` —
+   Swagger.
+
+Готово — сайт работает на бесплатных доменах. 🎉
 
 ---
 
-## 11. Launch checklist
-- [ ] SSL active (Vercel + Railway, automatic)
-- [ ] `ilmhub.uz`, `www.ilmhub.uz`, `api.ilmhub.uz` resolve
-- [ ] `curl https://api.ilmhub.uz/health` → `{"ok":true,...}` + uptime monitor green
-- [ ] Swagger public at `https://api.ilmhub.uz/api/docs`
-- [ ] Sentry receiving FE **and** BE events (trigger a test error)
-- [ ] Resend domain verified; a real email delivered
-- [ ] Supabase prod bucket public + backups enabled
-- [ ] Privacy (`/privacy`) & Terms (`/terms`) reviewed — already shipped in Uzbek
-- [ ] Contact email (`salom@ilmhub.uz`) monitored; support process documented
-- [ ] _(Deferred)_ Real-card payment test — after §10
+## Шпаргалка по переменным (Railway → backend)
+Большинство **копируется как есть из локального `backend/.env`**. Меняешь только:
+
+| Переменная | Что поставить |
+| --- | --- |
+| `NODE_ENV` | `production` |
+| `REDIS_URL` | адрес Redis из Части 1, шаг 3 (НЕ localhost) |
+| `FRONTEND_URL` | адрес фронта на Vercel |
+| `CORS_ORIGIN` | адрес фронта на Vercel |
+| `SWAGGER_ENABLED` | `true` |
+| `GOOGLE_CALLBACK_URL` | `https://<BACKEND_URL>/auth/google/callback` (если нужен Google-вход) |
+
+Остальное (`DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `MUX_*`,
+`SUPABASE_*`, `RESEND_API_KEY`, `EMAIL_FROM`) — **как в локальном `.env`**.
+`PORT` задавать не нужно — Railway передаёт сам.
+
+> Примечание: если скопировать `DATABASE_URL` из локального `.env`, прод и локальная
+> разработка будут работать с одной и той же базой Supabase (для демо это нормально).
+
+---
+
+## Что отложено / не входит
+- **Свой домен `ilmhub.uz`** — не покупается; используем бесплатные адреса. (Если
+  передумаешь — в Vercel/Railway есть раздел Custom Domain, нужно будет настроить DNS.)
+- **Платежи (Payme/Click/Uzum)** — пока mock-режим (Шаг 24). Реальная интеграция —
+  отдельная задача, требует регистрации мерчанта.
+- **Sentry** — код подключён, но без `*_SENTRY_DSN` просто выключен; можно включить позже,
+  заполнив переменные.

@@ -103,7 +103,7 @@ pnpm dev
 
 - **Сайт:** http://localhost:3000
 - **API:** http://localhost:3001
-- **Swagger (документация API):** http://localhost:3001/api (если включён)
+- **Swagger (документация API):** http://localhost:3001/api/docs
 
 Чтобы остановить — нажмите `Ctrl + C` в каждой вкладке.
 
@@ -133,5 +133,30 @@ lsof -ti:3000 | xargs kill -9
 ```
 
 Хотите снова свежие демо-данные — добавьте `pnpm db:reset` в backend перед `start:dev`.
+
+---
+
+## 🚢 Production deployment
+
+Полное руководство по деплою — **[DEPLOYMENT.md](DEPLOYMENT.md)**: Vercel (frontend) +
+Railway (backend) + Supabase + Redis + Mux + Resend + Sentry, настройка домена
+`ilmhub.uz` / `api.ilmhub.uz` (DNS), миграции на деплое и launch-чеклист.
+
+Кратко:
+
+- **Frontend → Vercel.** Root Directory = `frontend`, прод-ветка `main`, preview на
+  каждый PR. Переменные: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`,
+  `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`
+  (см. [`frontend/.env.example`](frontend/.env.example)).
+- **Backend → Railway.** Root Directory = `backend`; [`backend/railway.json`](backend/railway.json)
+  задаёт сборку, healthcheck `/health` и `prisma migrate deploy` перед стартом.
+  Переменные — все из [`backend/.env.example`](backend/.env.example); `CORS_ORIGIN`
+  принимает список через запятую, превью-домены `*.vercel.app` разрешены автоматически.
+- **DB:** Supabase Postgres (pooler + direct). **Redis:** managed (Railway plugin /
+  Upstash) для BullMQ. **Storage:** один публичный bucket `course-assets`.
+- **Swagger** публичен в проде: `https://api.ilmhub.uz/api/docs` (флаг `SWAGGER_ENABLED`).
+- **Sentry** подключён в обоих приложениях; без DSN — no-op.
+- **Платежи** пока mock (Шаг 24); реальная интеграция Payme/Click/Uzum — отдельная
+  задача, см. DEPLOYMENT.md → Payments.
 
 ---

@@ -3,7 +3,10 @@
  * Single source of truth for URL/name/defaults reused by the root layout,
  * sitemap, robots, JSON-LD builders and OG image.
  */
-export const SITE_URL = "https://ilmhub.uz";
+// Env-driven so preview deployments emit correct canonical/OG/sitemap URLs;
+// falls back to the production domain when NEXT_PUBLIC_SITE_URL is unset.
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://ilmhub.uz";
 export const SITE_NAME = "IlmHub";
 
 export const SITE_TITLE = "IlmHub — IT kurslar platformasi";

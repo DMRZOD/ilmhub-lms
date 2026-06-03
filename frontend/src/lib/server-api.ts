@@ -12,6 +12,9 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 const DEFAULT_REVALIDATE = 3600; // 1h ISR for public catalogue reads
+// Hard cap per request so a slow/hanging endpoint can't block static generation
+// (e.g. the sitemap) up to Next.js' 60s timeout and fail the production build.
+const REQUEST_TIMEOUT_MS = 10_000;
 
 /**
  * Fetch a public endpoint. Returns `null` on any non-2xx response or network
@@ -28,6 +31,7 @@ export async function serverFetch<T>(
     const res = await fetch(url, {
       headers: { Accept: "application/json" },
       next: { revalidate },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     return (await res.json()) as T;

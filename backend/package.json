@@ -4,8 +4,12 @@
   "private": true,
   "description": "IlmHub backend API (NestJS + Prisma + Supabase PostgreSQL)",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -25,11 +29,20 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": ["ts-jest", { "isolatedModules": true }]
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "isolatedModules": true
+        }
+      ]
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s",
@@ -60,6 +73,7 @@
     "@prisma/client": "^6.19.3",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.0.8",
+    "@sentry/nestjs": "^10.55.0",
     "@supabase/supabase-js": "^2.106.2",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.77.4",

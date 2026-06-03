@@ -6,7 +6,18 @@ export const envSchema = z.object({
     .default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
 
-  CORS_ORIGIN: z.string().url().default('http://localhost:3000'),
+  // Comma-separated list of allowed origins, e.g.
+  // "https://ilmhub.uz,https://www.ilmhub.uz". Parsed into an array; main.ts
+  // also allows Vercel preview deployments (*.vercel.app) on top of this list.
+  CORS_ORIGIN: z
+    .string()
+    .default('http://localhost:3000')
+    .transform((s) =>
+      s
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    ),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   DIRECT_URL: z.string().min(1, 'DIRECT_URL is required'),
@@ -39,7 +50,28 @@ export const envSchema = z.object({
   MUX_WEBHOOK_SECRET: z
     .preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
 
+  // Payments — Step 24 ships a mock checkout/webhook flow. These are
+  // documented placeholders for the future real Payme/Click/Uzum integration
+  // and are unused until that work lands (see DEPLOYMENT.md → Payments).
   PAYME_MERCHANT_ID: z.string().optional(),
+  PAYME_KEY: z.string().optional(),
+  CLICK_SERVICE_ID: z.string().optional(),
+  CLICK_MERCHANT_ID: z.string().optional(),
+  CLICK_SECRET: z.string().optional(),
+  UZUM_MERCHANT_ID: z.string().optional(),
+  UZUM_SECRET: z.string().optional(),
+
+  // Error monitoring — empty string (placeholder) → unset, so Sentry no-ops.
+  SENTRY_DSN: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+
+  // Serve Swagger UI at /api/docs. Defaults on; set "false" to disable in prod.
+  SWAGGER_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
 
   // Empty string in .env (placeholder before the user fills it) → treat as unset.
   SUPABASE_URL: z

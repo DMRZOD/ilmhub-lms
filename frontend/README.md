@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IlmHub — Frontend
 
-## Getting Started
+Next.js 15 (App Router, Turbopack) + React 19 + TypeScript. UI for the IlmHub LMS;
+talks to the NestJS backend over `NEXT_PUBLIC_API_URL`.
 
-First, run the development server:
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local   # then set NEXT_PUBLIC_API_URL=http://localhost:3001
+pnpm dev                      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The backend must be running on `:3001` (see [../README.md](../README.md) for the full
+two-terminal demo walkthrough).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | Dev server (Turbopack) |
+| `pnpm build` | Production build |
+| `pnpm start` | Serve the production build |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm test` | Vitest unit/component tests |
+| `pnpm test:e2e` | Playwright end-to-end tests |
+| `pnpm analyze` | Bundle analyzer (`ANALYZE=true`) |
 
-## Learn More
+## Environment variables
 
-To learn more about Next.js, take a look at the following resources:
+See [`.env.example`](.env.example). Public (`NEXT_PUBLIC_*`) vars are exposed to the
+browser; `SENTRY_*` (without the public prefix) are build-time only.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variable | Notes |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | Backend base URL (`http://localhost:3001` in dev) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical site URL for SEO/sitemap (defaults to `https://ilmhub.uz`) |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN; empty → Sentry no-op |
+| `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT` | Build-time source-map upload (set in Vercel) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deploys to **Vercel** (Root Directory = `frontend`). Full guide:
+[../DEPLOYMENT.md](../DEPLOYMENT.md).

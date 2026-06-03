@@ -1,3 +1,6 @@
+// Sentry must be initialised before any other module so its auto-instrumentation
+// can hook into them. Keep this as the very first import.
+import './instrument';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
@@ -27,17 +30,18 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService<Env, true>);
   const corsOrigin = config.get('CORS_ORIGIN', { infer: true });
   const port = config.get('PORT', { infer: true });
-  const nodeEnv = config.get('NODE_ENV', { infer: true });
 
+  // corsOrigin is a string[]; also allow Vercel preview deployments so PR
+  // previews can reach the API without listing every generated subdomain.
   app.enableCors({
-    origin: corsOrigin,
+    origin: [...corsOrigin, /\.vercel\.app$/],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
   app.enableShutdownHooks();
 
-  const enableSwagger = nodeEnv !== 'production';
+  const enableSwagger = config.get('SWAGGER_ENABLED', { infer: true });
   if (enableSwagger) {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('IlmHub API')

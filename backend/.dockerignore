@@ -1,0 +1,14 @@
+# Never copy the host's (macOS) build artifacts into the Linux image — native
+# modules (sharp, bcrypt, prisma engines) would be the wrong platform.
+node_modules
+dist
+coverage
+
+# Secrets and local-only files.
+.env
+.env.*
+
+# Misc
+.git
+*.log
+test

@@ -33,8 +33,13 @@ test.describe("Catalog", () => {
 
   test("search narrows the catalog via the URL query", async ({ page }) => {
     await page.goto("/courses");
-    await page.getByPlaceholder("Kurs qidiring...").first().fill("react");
-    // nuqs writes the query to the URL (debounced).
-    await expect(page).toHaveURL(/react/i, { timeout: 10_000 });
+    const search = page.getByPlaceholder("Kurs qidiring...").first();
+    await search.click();
+    // Real keystrokes — the field is controlled (value={q}); .fill() doesn't
+    // reliably fire React's onChange here.
+    await search.pressSequentially("react", { delay: 50 });
+    await expect(search).toHaveValue("react");
+    // The search syncs to the URL via nuqs (?q=...).
+    await expect(page).toHaveURL(/[?&]q=react/i, { timeout: 10_000 });
   });
 });

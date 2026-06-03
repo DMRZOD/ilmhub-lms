@@ -50,9 +50,9 @@ export const envSchema = z.object({
   MUX_WEBHOOK_SECRET: z
     .preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
 
-  // Payments — Step 24 ships a mock checkout/webhook flow. These are
-  // documented placeholders for the future real Payme/Click/Uzum integration
-  // and are unused until that work lands (see DEPLOYMENT.md → Payments).
+  // Payments — the checkout/webhook flow is currently mocked. These are
+  // placeholders for a future real Payme/Click/Uzum integration and are unused
+  // until that work lands.
   PAYME_MERCHANT_ID: z.string().optional(),
   PAYME_KEY: z.string().optional(),
   CLICK_SERVICE_ID: z.string().optional(),

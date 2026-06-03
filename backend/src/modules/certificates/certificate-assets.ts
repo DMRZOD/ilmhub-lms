@@ -1,10 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// Static assets (Sora fonts + IlmHub logo) live under <cwd>/public/certificate,
-// mirroring the existing `public/sample-certificate.pdf` convention. They are
-// read once and cached as base64 so the PDF template renders fully offline
-// (Puppeteer's `setContent` cannot resolve relative file URLs).
+// Static assets (Sora fonts + IlmHub logo) live under <cwd>/public/certificate.
+// They are read once and cached as base64 so the PDF template renders fully
+// offline (Puppeteer's `setContent` cannot resolve relative file URLs).
 
 export interface CertificateAssets {
   fonts: {

@@ -8,8 +8,7 @@ import { loginViaUi, SEED_ACCOUNTS } from "./helpers";
  *
  * Scaffolded (test.fixme): the create/publish wizard depends on Mux upload +
  * Supabase image upload, which must be stubbed via page.route(); the admin
- * approval needs a course sitting in PENDING_REVIEW. Tracked in
- * IMPLEMENTATION_ROADMAP.md "TODO / Known issues".
+ * approval needs a course sitting in PENDING_REVIEW.
  */
 test.describe("Instructor", () => {
   test.fixme("create a course and submit it for review", async ({ page }) => {

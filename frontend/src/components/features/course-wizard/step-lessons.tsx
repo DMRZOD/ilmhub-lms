@@ -141,7 +141,12 @@ function VideoEditor({ lesson, auth }: { lesson: WizardLesson; auth: Auth }) {
       const upload = UpChunk.createUpload({
         endpoint: url,
         file,
-        chunkSize: 30720, // 30 MB
+        // Small starting chunk + dynamic sizing makes uploads far more resilient
+        // on slow / unstable connections: a dropped chunk only costs ~5 MB to
+        // retry (not 30 MB), progress updates smoothly, and UpChunk grows the
+        // chunk size automatically when the connection turns out to be fast.
+        chunkSize: 5120, // 5 MB start (must be a multiple of 256)
+        dynamicChunkSize: true,
       });
       upload.on("progress", (e: CustomEvent) =>
         setProgress(Math.round((e.detail as number) ?? 0)),

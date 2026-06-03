@@ -52,3 +52,5 @@ next-env.d.ts
 # Others
 .claude/
 design-system/
+claude.md
+docs/

@@ -1,22 +1,22 @@
 import { faker } from '@faker-js/faker';
 import {
   BlogPostStatus,
-  CodingLanguage,
-  CourseLanguage,
-  CourseLevel,
   CourseStatus,
   LessonType,
+  MuxAssetStatus,
   MuxPlaybackPolicy,
   NotificationType,
   OrderStatus,
   PaymentProvider,
   PaymentStatus,
+  Prisma,
   PrismaClient,
-  QuizQuestionType,
   UserRole,
   WishlistKind,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+
+import { CURATED_COURSES, CURATED_INSTRUCTORS } from './curated-courses';
 
 const prisma = new PrismaClient();
 
@@ -72,12 +72,12 @@ const HOME_STATS = [
 ];
 
 const TESTIMONIALS = [
-  { studentName: 'Bahodir Ergashev', studentRole: 'Frontend Developer', courseName: 'React.js asoslari', rating: 5, text: "Kursdan keyin birinchi ish o'rnimni topdim. Aziz aka materiallarni shu qadar tushunarli yetkazib beradiki — har bir mavzu o'rniga tushadi." },
+  { studentName: 'Bahodir Ergashev', studentRole: 'Frontend Developer', courseName: 'React bilan zamonaviy frontend', rating: 5, text: "Kursdan keyin birinchi ish o'rnimni topdim. Aziz aka materiallarni shu qadar tushunarli yetkazib beradiki — har bir mavzu o'rniga tushadi." },
   { studentName: 'Madina Olimova', studentRole: 'UI/UX dizayner', courseName: "Figma'da UI/UX dizayn", rating: 5, text: "Hech qachon dizayn qilmagan edim. Endi esa portfolio bilan junior pozitsiyalarga taklif olyapman. Amaliyotlar real loyihalarga juda yaqin." },
-  { studentName: 'Sardor Yusupov', studentRole: 'Backend Engineer', courseName: 'Node.js bilan backend', rating: 5, text: "Microservices arxitekturasini real kod orqali tushuntirib berildi. Ish joyimda menga ishonib katta loyihani topshirishdi." },
+  { studentName: 'Sardor Yusupov', studentRole: 'Backend Engineer', courseName: 'Node.js bilan backend dasturlash', rating: 5, text: "Microservices arxitekturasini real kod orqali tushuntirib berildi. Ish joyimda menga ishonib katta loyihani topshirishdi." },
   { studentName: 'Zarina Tursunova', studentRole: 'Data Analyst', courseName: "Python bilan ma'lumotlar tahlili", rating: 5, text: "Marketing sohasidan keldim, raqamlardan qo'rqardim. Hozir biznes savollariga Python bilan javob qaytaraman — bu sezilarli farq." },
-  { studentName: 'Otabek Soliyev', studentRole: 'Mobile Developer', courseName: 'Flutter bilan mobil ilovalar', rating: 4, text: "Mobil ilovalar dunyosiga kirish uchun ajoyib boshlanish. Birinchi loyiham App Store'da nashr etildi." },
-  { studentName: 'Nargiza Komilova', studentRole: 'Junior Developer', courseName: "Next.js bilan to'liq stack", rating: 5, text: "Server komponentlari dastlab qiyin tuyulgan, lekin kurs oxirida o'zim production loyihasi tuzdim. O'qituvchining qo'llab-quvvatlashi juda qadrli." },
+  { studentName: 'Otabek Soliyev', studentRole: 'Junior Developer', courseName: 'JavaScript asoslari', rating: 4, text: "Dasturlash dunyosiga kirish uchun ajoyib boshlanish. Birinchi interaktiv sahifamni o'zim yozdim." },
+  { studentName: 'Nargiza Komilova', studentRole: 'Full-stack Developer', courseName: "Node.js bilan backend dasturlash", rating: 5, text: "Backend dastlab qiyin tuyulgan, lekin kurs oxirida o'zim production API tuzdim. O'qituvchining qo'llab-quvvatlashi juda qadrli." },
 ];
 
 const FAQS = [
@@ -91,12 +91,9 @@ const FAQS = [
   { question: "O'zim kurs yaratishim mumkinmi?", answer: '"Ustoz bo\'lish" sahifasidan ariza yuboring. Tasdiqlangan ustozlar IlmHub Studio orqali kurslar yaratib, daromad olishlari mumkin.' },
 ];
 
-const COURSE_LEVELS: CourseLevel[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
-const COURSE_LANGS: CourseLanguage[] = ['UZ', 'RU', 'EN'];
-const LESSON_TYPES: LessonType[] = ['VIDEO', 'ARTICLE', 'QUIZ', 'CODING'];
-
 // Public Mux test playback IDs from the Mux docs / sample assets — safe to use in dev seeds.
-// All policy=PUBLIC so the player can stream without a signed token.
+// All policy=PUBLIC so the player can stream without a signed token. These are
+// placeholders until instructors upload their own videos via the wizard (see docs/PLAN.md).
 const MUX_TEST_PLAYBACK_IDS = [
   'qxb01i6T202018GFS02vp9RIe01icTcDCjVzQpmaB00CUisJ4',
   'DS00Spx1CV902MCtPj5WknGlR102V5HFkDe',
@@ -104,7 +101,6 @@ const MUX_TEST_PLAYBACK_IDS = [
   'a4nOgmxGWg6gULfcBbAa00gXyfcwPnAFldd8mbnRQl4E',
   'VcmKA6aqzIzlg3MayLJDnbF55kX00mds028Z65QAY63ZQ',
 ];
-const CODING_LANGS: CodingLanguage[] = ['JS', 'TS', 'PYTHON', 'JAVA', 'CPP', 'GO'];
 const PAYMENT_PROVIDERS: PaymentProvider[] = ['PAYME', 'CLICK', 'UZUM'];
 
 function pick<T>(arr: T[]): T {
@@ -179,17 +175,19 @@ async function seedUsers() {
     },
   });
 
+  // Named instructors from the curated catalogue (curated-courses.ts). Course
+  // definitions reference these by index, so the order here must match.
   const instructors = [];
-  for (let i = 0; i < 5; i++) {
+  for (const def of CURATED_INSTRUCTORS) {
     instructors.push(
       await prisma.user.create({
         data: {
-          email: `instructor${i + 1}@ilmhub.uz`,
+          email: def.email,
           passwordHash: instructorHash,
-          name: faker.person.fullName(),
+          name: def.name,
           role: UserRole.INSTRUCTOR,
-          bio: faker.lorem.paragraph(),
-          avatarUrl: faker.image.avatarGitHub(),
+          bio: def.bio,
+          avatarUrl: dicebear(def.name),
           emailVerified: true,
         },
       })
@@ -297,6 +295,8 @@ async function seedFaqs() {
 
 type SeededCourse = {
   id: string;
+  slug: string;
+  title: string;
   lessonIds: string[];
   videoLessonIds: string[];
   quizLessonIds: string[];
@@ -304,50 +304,43 @@ type SeededCourse = {
   priceUsdCents: number;
 };
 
-async function seedCourses(
+async function seedCuratedCourses(
   instructors: { id: string }[],
-  categories: { id: string }[]
+  categories: { id: string; slug: string }[]
 ): Promise<SeededCourse[]> {
-  console.log('📚 Seeding 30 courses with sections/lessons...');
+  console.log(`📚 Seeding ${CURATED_COURSES.length} curated courses with sections/lessons...`);
+  const catBySlug = new Map(categories.map((c) => [c.slug, c.id]));
   const seeded: SeededCourse[] = [];
+  let videoCounter = 0;
 
-  for (let i = 0; i < 30; i++) {
-    const instructor = pick(instructors);
-    const category = pick(categories);
-    const title = faker.company.catchPhrase();
-    const slug = uniqueSlug(title, i);
-    // First 3 courses are always free so the catalog always has discoverable free courses
-    // for the learning flow (step 19). The rest get paid pricing.
-    const isFree = i < 3 || Math.random() < 0.1;
-    const priceUsdCents = isFree ? 0 : faker.number.int({ min: 990, max: 9990 });
-    const discountUsdCents = !isFree && Math.random() < 0.3
-      ? Math.floor(priceUsdCents * faker.number.float({ min: 0.3, max: 0.7 }))
-      : null;
-
-    const sectionCount = faker.number.int({ min: 3, max: 6 });
-    const sectionsData = Array.from({ length: sectionCount }).map((_, idx) => ({
-      title: `Section ${idx + 1}: ${faker.lorem.words({ min: 2, max: 5 })}`,
-      order: idx,
-    }));
+  for (const def of CURATED_COURSES) {
+    const categoryId = catBySlug.get(def.categorySlug);
+    if (!categoryId) {
+      throw new Error(`Curated course "${def.slug}" references unknown category "${def.categorySlug}"`);
+    }
+    const instructor = instructors[def.instructorIndex];
+    if (!instructor) {
+      throw new Error(`Curated course "${def.slug}" references unknown instructor index ${def.instructorIndex}`);
+    }
 
     const course = await prisma.course.create({
       data: {
-        slug,
-        title,
-        subtitle: faker.lorem.sentence(),
-        description: faker.lorem.paragraph(),
-        longDescription: faker.lorem.paragraphs(3, '\n\n'),
-        thumbnailUrl: faker.image.urlPicsumPhotos({ width: 800, height: 450 }),
-        previewVideoUrl: Math.random() < 0.5 ? faker.internet.url() : null,
+        slug: def.slug,
+        title: def.title,
+        subtitle: def.subtitle,
+        description: def.description,
+        longDescription: def.longDescription,
+        thumbnailUrl: `https://picsum.photos/seed/${def.slug}/800/450`,
+        previewVideoUrl: null,
         instructorId: instructor.id,
-        categoryId: category.id,
-        level: pick(COURSE_LEVELS),
-        language: pick(COURSE_LANGS),
-        priceUsdCents,
-        discountUsdCents,
+        categoryId,
+        level: def.level,
+        language: def.language,
+        priceUsdCents: def.priceUsdCents,
+        discountUsdCents: def.discountUsdCents ?? null,
         status: CourseStatus.PUBLISHED,
-        learningOutcomes: Array.from({ length: 5 }).map(() => faker.lorem.sentence()),
-        requirements: Array.from({ length: 3 }).map(() => faker.lorem.sentence()),
+        learningOutcomes: def.learningOutcomes,
+        requirements: def.requirements,
         publishedAt: faker.date.past({ years: 1 }),
       },
     });
@@ -359,90 +352,87 @@ async function seedCourses(
     const quizLessonIds: string[] = [];
     const codingLessonIds: string[] = [];
 
-    for (const s of sectionsData) {
+    for (let si = 0; si < def.sections.length; si++) {
+      const s = def.sections[si];
       const section = await prisma.section.create({
-        data: { courseId: course.id, title: s.title, order: s.order },
+        data: { courseId: course.id, title: s.title, order: si },
       });
-      const lessonCount = faker.number.int({ min: 4, max: 10 });
+
       let sectionDurationSec = 0;
-      for (let li = 0; li < lessonCount; li++) {
-        const type = pick(LESSON_TYPES);
-        const durationSeconds = faker.number.int({ min: 120, max: 1200 });
-        const isVideo = type === LessonType.VIDEO;
+      for (let li = 0; li < s.lessons.length; li++) {
+        const l = s.lessons[li];
+        const isVideo = l.type === LessonType.VIDEO;
         const muxPlaybackId = isVideo
-          ? MUX_TEST_PLAYBACK_IDS[
-              (s.order * 10 + li) % MUX_TEST_PLAYBACK_IDS.length
-            ]
+          ? MUX_TEST_PLAYBACK_IDS[videoCounter++ % MUX_TEST_PLAYBACK_IDS.length]
           : null;
+
         const lesson = await prisma.lesson.create({
           data: {
             sectionId: section.id,
-            title: faker.lorem.sentence({ min: 3, max: 7 }).replace(/\.$/, ''),
-            description: faker.lorem.sentence(),
+            title: l.title,
+            description: l.description ?? null,
             order: li,
-            type,
-            videoAssetId: isVideo ? `mux_${faker.string.alphanumeric(20)}` : null,
+            type: l.type,
+            videoAssetId: isVideo ? `mux_demo_${videoCounter}` : null,
             muxPlaybackId,
             muxPlaybackPolicy: MuxPlaybackPolicy.PUBLIC,
-            articleContent: type === LessonType.ARTICLE ? faker.lorem.paragraphs(4, '\n\n') : null,
-            durationSeconds,
-            isPreview: li === 0,
-            resources: [
-              { name: 'Slides', url: faker.internet.url() },
-              { name: 'Source code', url: faker.internet.url() },
-            ],
+            muxAssetStatus: isVideo ? MuxAssetStatus.READY : MuxAssetStatus.NONE,
+            articleContent: l.type === LessonType.ARTICLE ? l.article ?? null : null,
+            durationSeconds: l.durationSeconds,
+            isPreview: l.isPreview ?? false,
+            resources: (l.resources ?? []) as Prisma.InputJsonValue,
           },
         });
         lessonIds.push(lesson.id);
-        if (type === LessonType.VIDEO) videoLessonIds.push(lesson.id);
-        if (type === LessonType.QUIZ) quizLessonIds.push(lesson.id);
-        if (type === LessonType.CODING) codingLessonIds.push(lesson.id);
-        sectionDurationSec += durationSeconds;
+        sectionDurationSec += l.durationSeconds;
 
-        if (type === LessonType.QUIZ) {
+        if (l.type === LessonType.VIDEO) videoLessonIds.push(lesson.id);
+
+        if (l.type === LessonType.QUIZ && l.quiz) {
+          quizLessonIds.push(lesson.id);
           const quiz = await prisma.quiz.create({
-            data: { lessonId: lesson.id, passingScore: 70, attemptsAllowed: 3 },
+            data: {
+              lessonId: lesson.id,
+              passingScore: l.quiz.passingScore ?? 70,
+              attemptsAllowed: 3,
+            },
           });
-          const qCount = faker.number.int({ min: 3, max: 6 });
-          for (let qi = 0; qi < qCount; qi++) {
-            const opts = Array.from({ length: 4 }).map((_, oi) => ({
-              id: `opt_${oi}`,
-              text: faker.lorem.sentence({ min: 3, max: 6 }),
-            }));
+          for (let qi = 0; qi < l.quiz.questions.length; qi++) {
+            const q = l.quiz.questions[qi];
             await prisma.quizQuestion.create({
               data: {
                 quizId: quiz.id,
-                type: QuizQuestionType.SINGLE,
-                text: faker.lorem.sentence() + '?',
-                options: opts,
-                correctAnswerIds: [opts[0].id],
+                type: q.type,
+                text: q.text,
+                options: q.options as Prisma.InputJsonValue,
+                correctAnswerIds: q.correctAnswerIds,
+                explanation: q.explanation,
                 order: qi,
               },
             });
           }
         }
 
-        if (type === LessonType.CODING) {
+        if (l.type === LessonType.CODING && l.coding) {
+          codingLessonIds.push(lesson.id);
           await prisma.codingExercise.create({
             data: {
               lessonId: lesson.id,
-              language: pick(CODING_LANGS),
-              starterCode: '// write your solution here\n',
-              solutionCode: '// reference solution\n',
-              tests: [
-                { input: '1', expectedOutput: '1' },
-                { input: '2', expectedOutput: '4' },
-              ],
+              language: l.coding.language,
+              starterCode: l.coding.starterCode,
+              solutionCode: l.coding.solutionCode,
+              tests: l.coding.tests as Prisma.InputJsonValue,
             },
           });
         }
       }
-      totalLessons += lessonCount;
+
+      totalLessons += s.lessons.length;
       totalDurationSec += sectionDurationSec;
       await prisma.section.update({
         where: { id: section.id },
         data: {
-          lessonsCount: lessonCount,
+          lessonsCount: s.lessons.length,
           durationMinutes: Math.floor(sectionDurationSec / 60),
         },
       });
@@ -458,11 +448,13 @@ async function seedCourses(
 
     seeded.push({
       id: course.id,
+      slug: def.slug,
+      title: def.title,
       lessonIds,
       videoLessonIds,
       quizLessonIds,
       codingLessonIds,
-      priceUsdCents,
+      priceUsdCents: def.priceUsdCents,
     });
   }
 
@@ -766,147 +758,6 @@ async function seedExtras(
   }
 }
 
-// A hand-authored, deterministic quiz (5 questions: SINGLE/MULTIPLE/TEXT, with
-// explanations) attached to the first course so step 23 has something real to
-// exercise the quiz UI against. The lesson is marked isPreview so it can be
-// opened without enrolling. The lesson URL is logged at the end of seeding.
-async function seedShowcaseQuiz(
-  courses: SeededCourse[],
-): Promise<{ lessonId: string; slug: string } | null> {
-  console.log('🧩 Seeding showcase quiz (5 questions)...');
-  const target = courses[0];
-  if (!target) return null;
-
-  const course = await prisma.course.findUnique({
-    where: { id: target.id },
-    select: { slug: true },
-  });
-  const section = await prisma.section.findFirst({
-    where: { courseId: target.id },
-    orderBy: { order: 'asc' },
-    select: { id: true, lessonsCount: true, durationMinutes: true },
-  });
-  if (!course || !section) return null;
-
-  const durationSeconds = 300;
-  const lesson = await prisma.lesson.create({
-    data: {
-      sectionId: section.id,
-      title: 'Bilimingizni sinab ko\'ring: Web asoslari',
-      description:
-        'Ushbu test orqali web dasturlash bo\'yicha asosiy bilimlaringizni tekshiring.',
-      order: section.lessonsCount,
-      type: LessonType.QUIZ,
-      durationSeconds,
-      isPreview: true,
-      resources: [],
-    },
-  });
-
-  const quiz = await prisma.quiz.create({
-    data: { lessonId: lesson.id, passingScore: 60, attemptsAllowed: 3 },
-  });
-
-  type SeedQuestion = {
-    type: QuizQuestionType;
-    text: string;
-    options: { id: string; text: string }[];
-    correctAnswerIds: string[];
-    explanation: string;
-  };
-
-  const questions: SeedQuestion[] = [
-    {
-      type: QuizQuestionType.SINGLE,
-      text: "Quyidagilardan qaysi biri JavaScript'da o'zgaruvchi e'lon qilish uchun to'g'ri kalit so'z?",
-      options: [
-        { id: 'a', text: 'let' },
-        { id: 'b', text: 'func' },
-        { id: 'c', text: 'define' },
-        { id: 'd', text: 'variable' },
-      ],
-      correctAnswerIds: ['a'],
-      explanation:
-        "JavaScript'da o'zgaruvchilar let, const yoki var kalit so'zlari bilan e'lon qilinadi.",
-    },
-    {
-      type: QuizQuestionType.SINGLE,
-      text: 'HTTP holat kodi 404 nimani bildiradi?',
-      options: [
-        { id: 'a', text: 'Ichki server xatosi' },
-        { id: 'b', text: 'Sahifa (resurs) topilmadi' },
-        { id: 'c', text: "So'rov muvaffaqiyatli" },
-        { id: 'd', text: "Ruxsat yo'q" },
-      ],
-      correctAnswerIds: ['b'],
-      explanation:
-        '404 Not Found — server soʻralgan resursni topa olmaganini bildiradi.',
-    },
-    {
-      type: QuizQuestionType.MULTIPLE,
-      text: 'Quyidagilardan qaysilari frontend texnologiyalari hisoblanadi? (bir nechta javob)',
-      options: [
-        { id: 'a', text: 'React' },
-        { id: 'b', text: 'PostgreSQL' },
-        { id: 'c', text: 'CSS' },
-        { id: 'd', text: 'TypeScript' },
-      ],
-      correctAnswerIds: ['a', 'c', 'd'],
-      explanation:
-        "React, CSS va TypeScript brauzerda (frontend) ishlatiladi; PostgreSQL — ma'lumotlar bazasi (backend).",
-    },
-    {
-      type: QuizQuestionType.MULTIPLE,
-      text: "Git haqida qaysi tasdiqlar to'g'ri? (bir nechta javob)",
-      options: [
-        { id: 'a', text: 'Git — taqsimlangan versiya nazorati tizimi' },
-        { id: 'b', text: 'git commit oʻzgarishlarni saqlaydi' },
-        { id: 'c', text: "Git faqat Windows'da ishlaydi" },
-        { id: 'd', text: 'GitHub va Git — bir xil narsa' },
-      ],
-      correctAnswerIds: ['a', 'b'],
-      explanation:
-        "Git — DVCS bo'lib, commit oʻzgarishlarni qayd etadi. GitHub esa Git uchun hosting xizmati.",
-    },
-    {
-      type: QuizQuestionType.TEXT,
-      text: "JavaScript'da massiv (array) elementlari sonini qaytaradigan xususiyat nomini yozing.",
-      options: [],
-      correctAnswerIds: ['length'],
-      explanation: 'array.length massivdagi elementlar sonini qaytaradi.',
-    },
-  ];
-
-  for (let i = 0; i < questions.length; i++) {
-    const q = questions[i];
-    await prisma.quizQuestion.create({
-      data: {
-        quizId: quiz.id,
-        type: q.type,
-        text: q.text,
-        options: q.options,
-        correctAnswerIds: q.correctAnswerIds,
-        explanation: q.explanation,
-        order: i,
-      },
-    });
-  }
-
-  await prisma.section.update({
-    where: { id: section.id },
-    data: {
-      lessonsCount: section.lessonsCount + 1,
-      durationMinutes: section.durationMinutes + Math.floor(durationSeconds / 60),
-    },
-  });
-  await prisma.course.update({
-    where: { id: target.id },
-    data: { lessonsCount: { increment: 1 } },
-  });
-
-  return { lessonId: lesson.id, slug: course.slug };
-}
-
 async function reportCounts() {
   const tables: Array<[string, () => Promise<number>]> = [
     ['users', () => prisma.user.count()],
@@ -955,17 +806,16 @@ async function main() {
   await seedSettings();
   await seedTestimonials();
   await seedFaqs();
-  const courses = await seedCourses(instructors, categories);
-  const showcaseQuiz = await seedShowcaseQuiz(courses);
+  const courses = await seedCuratedCourses(instructors, categories);
   await seedEnrollments(students, courses);
   await seedReviews(students, courses);
   await seedExtras(instructors, students, courses, achievements, blogCategories);
   await reportCounts();
   console.log('\n✅ Seed complete');
-  if (showcaseQuiz) {
-    console.log(
-      `\n🧩 Showcase quiz ready → /dars/${showcaseQuiz.lessonId} (course slug: ${showcaseQuiz.slug})`,
-    );
+  console.log('\n📚 Curated catalogue:');
+  for (const c of courses) {
+    const free = c.priceUsdCents === 0 ? 'FREE' : `$${(c.priceUsdCents / 100).toFixed(2)}`;
+    console.log(`  • ${c.title.padEnd(42)} /courses/${c.slug}  (${free})`);
   }
 }
 

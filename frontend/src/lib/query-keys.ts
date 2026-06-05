@@ -55,6 +55,7 @@ export const learningKeys = {
   lesson: (id: string) => [...learningKeys.all, "lesson", id] as const,
   playbackToken: (id: string) =>
     [...learningKeys.all, "playback-token", id] as const,
+  preview: (id: string) => [...learningKeys.all, "preview", id] as const,
   quiz: (lessonId: string) => [...learningKeys.all, "quiz", lessonId] as const,
   quizAttempts: (quizId: string) =>
     [...learningKeys.all, "quiz-attempts", quizId] as const,
@@ -62,6 +63,11 @@ export const learningKeys = {
     [...learningKeys.all, "coding", lessonId] as const,
   codingSubmissions: (exerciseId: string) =>
     [...learningKeys.all, "coding-submissions", exerciseId] as const,
+};
+
+export const blogKeys = {
+  all: ["blog"] as const,
+  comments: (slug: string) => [...blogKeys.all, "comments", slug] as const,
 };
 
 export const notesKeys = {

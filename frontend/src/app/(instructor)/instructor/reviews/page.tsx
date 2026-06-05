@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ReviewsContent } from "./reviews-content";
 
 export const metadata: Metadata = {
-  title: "Sharhlar · IlmHub",
+  title: "Sharhlar",
 };
 
 export default function ReviewsPage() {

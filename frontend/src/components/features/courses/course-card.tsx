@@ -27,6 +27,8 @@ interface CourseCardProps {
   variant?: CourseCardVariant;
   view?: ViewMode;
   className?: string;
+  /** Where the card links to. Defaults to the public course page. */
+  href?: string;
   progressPercent?: number;
   isCompleted?: boolean;
   isFavorited?: boolean;
@@ -44,6 +46,7 @@ export function CourseCard({
   variant = "public",
   view = "grid",
   className,
+  href,
   progressPercent = 0,
   isCompleted = false,
   isFavorited = false,
@@ -62,7 +65,7 @@ export function CourseCard({
 
   return (
     <Link
-      href={`/courses/${course.slug}`}
+      href={href ?? `/courses/${course.slug}`}
       className={cn("group block", className)}
       aria-label={course.title}
     >

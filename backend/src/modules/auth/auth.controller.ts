@@ -30,7 +30,9 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import type { GoogleProfilePayload } from './strategies/google.strategy';
 
-const AUTH_THROTTLE = { auth: { limit: 5, ttl: 60_000 } };
+// Tightens the global `default` throttler on these brute-force-prone routes
+// down to 5 attempts/min (overrides the 120/min default for this handler only).
+const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 
 @Controller('auth')
 export class AuthController {

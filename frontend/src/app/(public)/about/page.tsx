@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     "IlmHub — O'zbekistondagi yetakchi onlayn IT ta'lim platformasi. Bizning missiyamiz, qadriyatlarimiz va jamoamiz haqida bilib oling.",
   alternates: { canonical: "/about" },
   openGraph: {
-    title: "Biz haqimizda — IlmHub",
+    title: "Biz haqimizda",
     description:
       "IlmHub jamoasi, qadriyatlari va missiyasi bilan tanishing.",
     url: "/about",

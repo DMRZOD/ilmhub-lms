@@ -13,7 +13,11 @@ import type { InProgressCourse } from "@/features/student/types";
 function CourseCard({ course }: { course: InProgressCourse }) {
   return (
     <Link
-      href={`/courses/${course.slug}`}
+      href={
+        course.resumeLessonId
+          ? `/lesson/${course.resumeLessonId}`
+          : `/courses/${course.slug}`
+      }
       className="group block"
       aria-label={course.title}
     >

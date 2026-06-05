@@ -11,6 +11,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { LessonsService } from './lessons.service';
 import { LessonProgressDto } from './dto/lesson-progress.dto';
 
@@ -30,6 +31,16 @@ export class LessonsController {
     @Param('id') id: string,
   ) {
     return this.lessons.findOneForUser(userId, id);
+  }
+
+  @Public()
+  @Get(':id/preview')
+  @ApiOperation({
+    summary:
+      'Public free-preview playback for a lesson (no auth/enrollment). 403 if the lesson is not a free preview.',
+  })
+  preview(@Param('id') id: string) {
+    return this.lessons.getPreviewPlayback(id);
   }
 
   @Post(':id/playback-token')

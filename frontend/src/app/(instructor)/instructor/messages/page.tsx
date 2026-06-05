@@ -5,7 +5,7 @@ import { PageLoader } from "@/components/instructor-shell/page-states";
 import { MessagesContent } from "./messages-content";
 
 export const metadata: Metadata = {
-  title: "Aloqalar · IlmHub",
+  title: "Aloqalar",
 };
 
 export default function MessagesPage() {

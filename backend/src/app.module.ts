@@ -43,6 +43,7 @@ import { AdminRefundsModule } from './modules/admin-refunds/admin-refunds.module
 import { AdminReviewsModule } from './modules/admin-reviews/admin-reviews.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AdminBlogModule } from './modules/admin-blog/admin-blog.module';
+import { BlogModule } from './modules/blog/blog.module';
 import { AdminCmsModule } from './modules/admin-cms/admin-cms.module';
 import { AdminSettingsModule } from './modules/admin-settings/admin-settings.module';
 import { ContentModule } from './modules/content/content.module';
@@ -104,16 +105,16 @@ import { RolesGuard } from './common/guards/roles.guard';
       // Disabled under test so e2e suites can hammer auth endpoints without
       // tripping the rate limiter; stays enabled in dev/production.
       skipIf: () => process.env.NODE_ENV === 'test',
+      // Every throttler listed here is applied to EVERY route by the global
+      // guard. So this must hold only the generous app-wide limit — a strict
+      // limiter here would throttle the whole API (it previously capped the
+      // entire app at 5 req/min, starving dashboards + the SSE stream). Routes
+      // that need a tighter cap (auth) opt in locally via @Throttle().
       throttlers: [
         {
           name: 'default',
-          ttl: 1000,
-          limit: 10,
-        },
-        {
-          name: 'auth',
           ttl: 60_000,
-          limit: 5,
+          limit: 120,
         },
       ],
     }),
@@ -173,6 +174,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     AdminReviewsModule,
     SettingsModule,
     AdminBlogModule,
+    BlogModule,
     AdminCmsModule,
     AdminSettingsModule,
     ContentModule,

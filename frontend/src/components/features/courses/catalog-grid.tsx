@@ -29,7 +29,10 @@ export function CatalogGrid({
 }: CatalogGridProps) {
   const router = useRouter();
   const { data: viewer } = useAuth();
-  const favoritesQuery = useFavorites(viewer ? { limit: 100 } : {});
+  const favoritesQuery = useFavorites(
+    { limit: 100 },
+    { enabled: Boolean(viewer) },
+  );
   const toggle = useToggleFavorite();
 
   const favoriteIds = useMemo(() => {

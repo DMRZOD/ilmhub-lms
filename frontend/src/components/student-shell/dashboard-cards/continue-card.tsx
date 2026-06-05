@@ -42,7 +42,7 @@ export function ContinueCard({ lesson }: { lesson: CurrentLesson }) {
             </div>
             <Button asChild className="mt-sp-2 self-start">
               <Link
-                href={`/courses/${lesson.courseSlug}`}
+                href={`/lesson/${lesson.lessonId}`}
                 className="flex items-center gap-2"
               >
                 <Play className="h-4 w-4" />

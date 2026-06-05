@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { MeningKurslarimContent } from "./courses-content";
 
 export const metadata: Metadata = {
-  title: "Mening kurslarim · IlmHub",
+  title: "Mening kurslarim",
 };
 
 export default function MeningKurslarimPage() {

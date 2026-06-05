@@ -32,6 +32,7 @@ export type InProgressCourse = {
   durationMinutes: number;
   completedLessons: number;
   progress: number;
+  resumeLessonId: string | null;
   instructor: { id: string; name: string; avatarUrl: string | null };
   category: { id: string; slug: string; name: string; iconName: string | null };
   enrolledAt: string;

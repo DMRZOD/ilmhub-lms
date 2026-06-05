@@ -4,7 +4,7 @@ import { CmsNav } from "../cms-nav";
 import { AchievementsContent } from "./achievements-content";
 
 export const metadata: Metadata = {
-  title: "CMS · Yutuqlar · IlmHub",
+  title: "CMS · Yutuqlar",
 };
 
 export default function CmsAchievementsPage() {

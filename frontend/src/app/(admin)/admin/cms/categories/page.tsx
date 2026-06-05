@@ -4,7 +4,7 @@ import { CmsNav } from "../cms-nav";
 import { CategoriesContent } from "./categories-content";
 
 export const metadata: Metadata = {
-  title: "CMS · Kategoriyalar · IlmHub",
+  title: "CMS · Kategoriyalar",
 };
 
 export default function CmsCategoriesPage() {

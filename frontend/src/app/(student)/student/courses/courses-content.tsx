@@ -191,6 +191,11 @@ function EnrolledCourseItem({
       <CourseCard
         course={enrollment.course}
         variant="enrolled"
+        href={
+          enrollment.resumeLessonId
+            ? `/lesson/${enrollment.resumeLessonId}`
+            : `/courses/${enrollment.course.slug}`
+        }
         progressPercent={enrollment.progressPercent}
         isCompleted={Boolean(enrollment.completedAt)}
       />

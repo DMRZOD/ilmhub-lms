@@ -25,7 +25,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const instructor = await getInstructor(id);
-  if (!instructor) return { title: "Ustoz — IlmHub" };
+  if (!instructor) return { title: "Ustoz" };
 
   const title = instructor.name;
   const description =

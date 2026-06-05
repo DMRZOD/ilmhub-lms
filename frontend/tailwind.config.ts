@@ -121,6 +121,7 @@ const config: Config = {
   			'sp-4': 'var(--sp-4)',
   			'sp-5': 'var(--sp-5)',
   			'sp-6': 'var(--sp-6)',
+  			'sp-7': 'var(--sp-7)',
   			'sp-8': 'var(--sp-8)',
   			'sp-10': 'var(--sp-10)',
   			'sp-12': 'var(--sp-12)',

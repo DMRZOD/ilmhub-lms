@@ -164,6 +164,56 @@ export class LessonsService {
     };
   }
 
+  /**
+   * Public, enrollment-free playback for a free-preview lesson (Udemy-style
+   * "watch this lesson free"). Only serves lessons flagged `isPreview`, so paid
+   * lessons can never leak. PUBLIC policy returns a null token; SIGNED is signed.
+   */
+  async getPreviewPlayback(lessonId: string) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: {
+        id: true,
+        title: true,
+        durationSeconds: true,
+        type: true,
+        isPreview: true,
+        muxPlaybackId: true,
+        muxPlaybackPolicy: true,
+      },
+    });
+    if (!lesson) throw new NotFoundException('lesson_not_found');
+    if (!lesson.isPreview) throw new ForbiddenException('not_preview');
+    if (!lesson.muxPlaybackId) {
+      throw new NotFoundException('lesson_video_not_available');
+    }
+
+    const meta = {
+      id: lesson.id,
+      title: lesson.title,
+      durationSeconds: lesson.durationSeconds,
+    };
+
+    if (lesson.muxPlaybackPolicy === MuxPlaybackPolicy.PUBLIC) {
+      return {
+        ...meta,
+        playbackId: lesson.muxPlaybackId,
+        policy: lesson.muxPlaybackPolicy,
+        token: null,
+        expiresAt: null,
+      };
+    }
+
+    const signed = await this.mux.signPlaybackId(lesson.muxPlaybackId);
+    return {
+      ...meta,
+      playbackId: lesson.muxPlaybackId,
+      policy: lesson.muxPlaybackPolicy,
+      token: signed.token,
+      expiresAt: signed.expiresAt,
+    };
+  }
+
   async recordProgress(
     userId: string,
     lessonId: string,

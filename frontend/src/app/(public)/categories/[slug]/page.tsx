@@ -29,7 +29,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const data = await getCategory(slug);
-  if (!data?.category) return { title: "Kategoriya — IlmHub" };
+  if (!data?.category) return { title: "Kategoriya" };
 
   const { category } = data;
   const title = `${category.name} kurslari`;

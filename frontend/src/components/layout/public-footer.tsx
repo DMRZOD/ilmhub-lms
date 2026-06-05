@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, MapPin, Phone, Send, Camera, Play, Briefcase } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 
 import { Icon } from "@/components/ui/icon";
 
@@ -11,7 +11,6 @@ const columns: { title: string; links: { label: string; href: string }[] }[] = [
       { label: "Biz haqimizda", href: "/about" },
       { label: "Ustoz bo'lish", href: "/student/become-instructor" },
       { label: "Karyera", href: "/career" },
-      { label: "Hamkorlik", href: "/partnership" },
       { label: "Yangiliklar", href: "/blog" },
     ],
   },
@@ -28,18 +27,18 @@ const columns: { title: string; links: { label: string; href: string }[] }[] = [
     title: "Yordam",
     links: [
       { label: "Yordam markazi", href: "/help" },
-      { label: "Sertifikatlar", href: "/student/certificates" },
-      { label: "FAQ", href: "/#faq" },
+      { label: "Sertifikatlar", href: "/certificates" },
+      { label: "FAQ", href: "/faq" },
       { label: "Aloqa", href: "/contact" },
     ],
   },
 ];
 
 const socials = [
-  { label: "Telegram", href: "https://t.me/ilmhub", icon: Send },
-  { label: "Instagram", href: "https://instagram.com/ilmhub", icon: Camera },
-  { label: "YouTube", href: "https://youtube.com/@ilmhub", icon: Play },
-  { label: "LinkedIn", href: "https://linkedin.com/company/ilmhub", icon: Briefcase },
+  { label: "LinkedIn", href: "https://linkedin.com/company/ilmhub", src: "/linkedin.png" },
+  { label: "YouTube", href: "https://youtube.com/@ilmhub", src: "/youtube.png" },
+  { label: "Telegram", href: "https://t.me/ilmhub", src: "/telegram.png" },
+  { label: "Instagram", href: "https://instagram.com/ilmhub", src: "/instagram.png" },
 ];
 
 export function PublicFooter() {
@@ -109,7 +108,7 @@ export function PublicFooter() {
             />
           </Link>
 
-          <div className="flex items-center gap-sp-2">
+          <div className="flex items-center gap-sp-3">
             {socials.map((s) => (
               <a
                 key={s.label}
@@ -117,9 +116,15 @@ export function PublicFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={s.label}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-ilm-full text-white/70 transition-colors duration-base ease-ilm-out hover:bg-white/10 hover:text-white"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-ilm-full transition-colors duration-base ease-ilm-out hover:bg-white/10"
               >
-                <Icon icon={s.icon} size={18} />
+                <Image
+                  src={s.src}
+                  alt={s.label}
+                  width={22}
+                  height={22}
+                  className="h-[30px] w-[30px] object-contain"
+                />
               </a>
             ))}
           </div>
@@ -140,7 +145,7 @@ export function PublicFooter() {
               </Link>
             </div>
             <p className="text-t-14 text-white/60">
-              © 2026 IlmHub. Barcha huquqlar himoyalangan.
+              © 2026 IlmHub
             </p>
           </div>
         </div>

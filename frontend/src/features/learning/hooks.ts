@@ -4,7 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { learningKeys, studentKeys, coursesKeys } from "@/lib/query-keys";
 
-import { fetchLesson, fetchPlaybackToken, postLessonProgress } from "./api";
+import {
+  fetchLesson,
+  fetchLessonPreview,
+  fetchPlaybackToken,
+  postLessonProgress,
+} from "./api";
 import type { ProgressDto } from "./types";
 
 export function useLesson(id: string | undefined) {
@@ -20,6 +25,16 @@ export function usePlaybackToken(id: string | undefined) {
   return useQuery({
     queryKey: learningKeys.playbackToken(id ?? ""),
     queryFn: () => fetchPlaybackToken(id as string),
+    enabled: Boolean(id),
+    staleTime: 50 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useLessonPreview(id: string | null | undefined) {
+  return useQuery({
+    queryKey: learningKeys.preview(id ?? ""),
+    queryFn: () => fetchLessonPreview(id as string),
     enabled: Boolean(id),
     staleTime: 50 * 60 * 1000,
     refetchOnWindowFocus: false,

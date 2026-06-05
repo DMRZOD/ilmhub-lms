@@ -226,6 +226,7 @@ export const enrolledCourseSchema = z.object({
   progressPercent: z.number().int().min(0).max(100),
   lastAccessedAt: z.string().nullable(),
   reviewedByMe: z.boolean().default(false),
+  resumeLessonId: z.string().nullable().optional(),
   course: courseCardSchema,
 });
 export type EnrolledCourse = z.infer<typeof enrolledCourseSchema>;

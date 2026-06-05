@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { CoursesContent } from "./courses-content";
 
 export const metadata: Metadata = {
-  title: "Kurslar moderatsiyasi · IlmHub",
+  title: "Kurslar moderatsiyasi",
 };
 
 export default function AdminCoursesPage() {

@@ -14,7 +14,13 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex w-full items-center gap-sp-6 overflow-x-auto border-b border-ilm-border",
+      // overflow-x-auto lets many tabs scroll horizontally on narrow screens.
+      // It also forces overflow-y to compute as `auto` (CSS rule: a non-visible
+      // axis promotes the other), so the active underline's `after:-bottom-px`
+      // (1px below the box) would spawn a phantom vertical scrollbar. Pinning
+      // overflow-y to hidden kills it; pb-px gives the underline room so it
+      // isn't clipped.
+      "inline-flex w-full items-center gap-sp-6 overflow-x-auto overflow-y-hidden border-b border-ilm-border pb-px",
       className
     )}
     {...props}

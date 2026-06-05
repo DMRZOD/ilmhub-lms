@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
-  Settings,
-  type LucideIcon,
-} from "lucide-react";
+import { GraduationCap, LayoutDashboard, LogOut, Settings } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -22,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLogout } from "@/features/auth/hooks";
 import { ROLE_LABELS } from "@/features/auth/labels";
+import { dashboardsForRole } from "@/features/auth/roles";
 import type { Role, User } from "@/features/auth/types";
 
 function initials(name: string) {
@@ -40,23 +35,6 @@ const ROLE_BADGE_TONE: Record<Role, NonNullable<BadgeProps["tone"]>> = {
   STUDENT: "neutral",
 };
 
-const ROLE_DASHBOARD: Record<
-  Role,
-  { href: string; label: string; icon: LucideIcon }
-> = {
-  STUDENT: {
-    href: "/student/dashboard",
-    label: "Mening kabinetim",
-    icon: LayoutDashboard,
-  },
-  INSTRUCTOR: {
-    href: "/instructor/dashboard",
-    label: "Ustoz paneli",
-    icon: LayoutDashboard,
-  },
-  ADMIN: { href: "/admin", label: "Admin paneli", icon: LayoutDashboard },
-};
-
 export function UserMenu({ user }: { user: User }) {
   const router = useRouter();
   const logout = useLogout();
@@ -66,9 +44,6 @@ export function UserMenu({ user }: { user: User }) {
     router.push("/");
     router.refresh();
   };
-
-  const dashboard = ROLE_DASHBOARD[user.role];
-  const DashboardIcon = dashboard.icon;
 
   return (
     <DropdownMenu>
@@ -97,12 +72,14 @@ export function UserMenu({ user }: { user: User }) {
           </Badge>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href={dashboard.href} className="flex items-center gap-2">
-            <DashboardIcon className="h-4 w-4" />
-            {dashboard.label}
-          </Link>
-        </DropdownMenuItem>
+        {dashboardsForRole(user.role).map((target) => (
+          <DropdownMenuItem key={target.role} asChild>
+            <Link href={target.href} className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              {target.label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
         {user.role === "STUDENT" && (
           <DropdownMenuItem asChild>
             <Link href="/student/become-instructor" className="flex items-center gap-2">

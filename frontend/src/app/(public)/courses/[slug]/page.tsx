@@ -29,7 +29,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const course = await getCourse(slug);
-  if (!course) return { title: "Kurs — IlmHub" };
+  if (!course) return { title: "Kurs" };
 
   const title = course.title;
   const description =

@@ -16,6 +16,7 @@ import {
   COURSE_CARD_INCLUDE,
   toCourseCard,
 } from '../courses/course-card.mapper';
+import { resolveResumeLessonIds } from '../enrollments/resume-lesson.util';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateAvatarDto } from './dto/update-avatar.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -329,6 +330,12 @@ export class UsersService {
       completedByCourse.set(cid, (completedByCourse.get(cid) ?? 0) + 1);
     }
 
+    const resumeByCourse = await resolveResumeLessonIds(
+      this.prisma,
+      userId,
+      enrolledCourseIds,
+    );
+
     const inProgressCourses = enrollmentsRaw
       .map((e) => {
         const total = e.course.lessonsCount;
@@ -345,6 +352,7 @@ export class UsersService {
           durationMinutes: e.course.durationMinutes,
           completedLessons: completed,
           progress,
+          resumeLessonId: resumeByCourse.get(e.course.id) ?? null,
           instructor: e.course.instructor,
           category: e.course.category,
           enrolledAt: e.enrolledAt.toISOString(),

@@ -32,6 +32,10 @@ interface CategoryItem {
 interface InstructorItem {
   id: string;
 }
+interface BlogItem {
+  slug: string;
+  publishedAt: string | null;
+}
 
 // Safety cap so a large catalogue can't make sitemap generation run away.
 const MAX_PAGES = 50;
@@ -67,10 +71,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Pull dynamic entries from the public API. On any failure (e.g. backend down
   // at build time) fetchAllPages/serverFetch yield empty results, so the
   // sitemap still builds with the static routes.
-  const [courses, instructors, categories] = await Promise.all([
+  const [courses, instructors, categories, blogPosts] = await Promise.all([
     fetchAllPages<CourseItem>("/courses"),
     fetchAllPages<InstructorItem>("/instructors"),
     serverFetch<CategoryItem[]>("/categories"),
+    fetchAllPages<BlogItem>("/blog"),
   ]);
 
   const courseEntries: MetadataRoute.Sitemap = courses.map((c) => ({
@@ -94,5 +99,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...base, ...courseEntries, ...categoryEntries, ...instructorEntries];
+  const blogEntries: MetadataRoute.Sitemap = blogPosts.map((p) => ({
+    url: `${SITE_URL}/blog/${p.slug}`,
+    lastModified: p.publishedAt ? new Date(p.publishedAt) : now,
+    changeFrequency: "weekly",
+    priority: 0.6,
+  }));
+
+  return [
+    ...base,
+    ...courseEntries,
+    ...categoryEntries,
+    ...instructorEntries,
+    ...blogEntries,
+  ];
 }

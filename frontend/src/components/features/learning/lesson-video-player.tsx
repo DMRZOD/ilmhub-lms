@@ -174,7 +174,10 @@ export const LessonVideoPlayer = React.forwardRef<
         metadata={{ video_title: title }}
         playbackRates={PLAYBACK_RATES}
         defaultHiddenCaptions
-        accentColor="#ffffff"
+        // Mux maps the control hover background to the accent color, so a white
+        // accent made the white icons vanish on hover. Use the brand blue
+        // (--ilm-info) — white icons stay visible on the colored hover.
+        accentColor="#3b82f6"
         streamType="on-demand"
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded}

@@ -68,6 +68,16 @@ export interface PlaybackTokenResponse {
   expiresAt: number | null;
 }
 
+export interface LessonPreviewResponse {
+  id: string;
+  title: string;
+  durationSeconds: number;
+  playbackId: string;
+  policy: MuxPlaybackPolicy;
+  token: string | null;
+  expiresAt: number | null;
+}
+
 export interface ProgressDto {
   positionSeconds: number;
   completed?: boolean;

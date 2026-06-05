@@ -20,6 +20,7 @@ export function toEnrolledCourse(
   progressPercent: number,
   lastAccessedAt: Date | null,
   reviewedByMe: boolean,
+  resumeLessonId: string | null,
 ) {
   return {
     id: row.id,
@@ -28,6 +29,7 @@ export function toEnrolledCourse(
     progressPercent,
     lastAccessedAt: lastAccessedAt ? lastAccessedAt.toISOString() : null,
     reviewedByMe,
+    resumeLessonId,
     course: toCourseCard(row.course),
   };
 }

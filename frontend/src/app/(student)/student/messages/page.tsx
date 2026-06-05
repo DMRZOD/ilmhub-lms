@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { StudentMessagesContent } from "./messages-content";
 
 export const metadata: Metadata = {
-  title: "Xabarlar · IlmHub",
+  title: "Xabarlar",
 };
 
 export default function StudentMessagesPage() {

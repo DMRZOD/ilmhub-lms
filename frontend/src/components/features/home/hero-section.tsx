@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
+import { CourseSearchField } from "@/components/features/courses/course-search-field";
 import { useHomeContent } from "@/features/home/content";
 
 import { MotionSection } from "./motion-section";
@@ -18,8 +18,12 @@ const HERO_FALLBACK = {
   primaryCtaLabel: "Kurslarni ko'rish",
   primaryCtaHref: "/courses",
   secondaryCtaLabel: "Bepul boshlash",
-  secondaryCtaHref: "/register",
+  secondaryCtaHref: "/courses?price=free",
 };
+
+// The secondary CTA always opens the catalogue filtered to free courses,
+// regardless of any stale CMS-configured href.
+const FREE_COURSES_HREF = "/courses?price=free";
 
 export function HeroSection() {
   const { data } = useHomeContent();
@@ -38,12 +42,7 @@ export function HeroSection() {
           </p>
 
           <div className="max-w-xl">
-            <Field
-              shape="pill"
-              icon={Search}
-              placeholder="Kurs nomini yoki kategoriyani qidiring..."
-              aria-label="Kurs qidirish"
-            />
+            <CourseSearchField placeholder="Kurs nomini yoki kategoriyani qidiring..." />
           </div>
 
           <div className="flex flex-col gap-sp-3 sm:flex-row">
@@ -64,7 +63,7 @@ export function HeroSection() {
               className="w-full sm:w-auto"
               asChild
             >
-              <Link href={hero.secondaryCtaHref}>{hero.secondaryCtaLabel}</Link>
+              <Link href={FREE_COURSES_HREF}>{hero.secondaryCtaLabel}</Link>
             </Button>
           </div>
         </div>

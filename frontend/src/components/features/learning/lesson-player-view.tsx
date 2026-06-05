@@ -185,7 +185,6 @@ export function LessonPlayerView({ lessonId }: { lessonId: string }) {
   return (
     <div className="flex min-h-screen flex-col">
       <LearningHeader
-        courseSlug={lesson.course.slug}
         courseTitle={lesson.course.title}
         progressPercent={lesson.course.progressPercent}
         onOpenSidebar={() => setMobileSidebarOpen(true)}

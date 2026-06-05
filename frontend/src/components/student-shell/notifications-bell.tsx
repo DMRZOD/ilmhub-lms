@@ -92,7 +92,12 @@ function NotificationRow({
   );
 }
 
-export function NotificationsBell() {
+export function NotificationsBell({
+  triggerClassName,
+}: {
+  /** Override the bell button styling (e.g. to match a plain-icon navbar). */
+  triggerClassName?: string;
+} = {}) {
   const { data, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
@@ -104,7 +109,10 @@ export function NotificationsBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="relative grid h-11 w-11 place-items-center rounded-ilm-md bg-ilm-surface text-ilm-ink transition-colors hover:bg-ilm-border focus:outline-none focus-visible:ring-2 focus-visible:ring-ilm-ink"
+        className={
+          triggerClassName ??
+          "relative grid h-11 w-11 place-items-center rounded-ilm-md bg-ilm-surface text-ilm-ink transition-colors hover:bg-ilm-border focus:outline-none focus-visible:ring-2 focus-visible:ring-ilm-ink"
+        }
         aria-label="Bildirishnomalar"
       >
         <Bell className="h-5 w-5" />

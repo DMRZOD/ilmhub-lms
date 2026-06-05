@@ -4,11 +4,11 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Search, ShoppingCart } from "lucide-react";
+import { Heart, Menu, ShoppingCart } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
+import { CourseSearchField } from "@/components/features/courses/course-search-field";
 import { Icon } from "@/components/ui/icon";
 import { useCartCount } from "@/features/cart/store";
 import {
@@ -18,13 +18,16 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { UserMenu } from "@/components/layout/user-menu";
+import { NotificationsBell } from "@/components/student-shell/notifications-bell";
+import { NotificationStreamProvider } from "@/components/notification-stream-provider";
 import { useAuth, useLogout } from "@/features/auth/hooks";
+import { dashboardPathForRole } from "@/features/auth/roles";
 
 const navLinks = [
   { href: "/courses", label: "Kurslar" },
   { href: "/categories", label: "Kategoriyalar" },
   { href: "/instructors", label: "Ustozlar" },
-  { href: "/about", label: "Biz haqimizda" },
+  { href: "/blog", label: "Blog" },
 ];
 
 function CartLink({
@@ -56,6 +59,28 @@ function CartLink({
   );
 }
 
+// Action icons (wishlist, cart, bell) live inside a single soft pill so they
+// read as one grouped control next to the avatar instead of bare floating
+// icons. They are transparent; the pill provides the backdrop and they tint on
+// hover.
+const NAV_ICON_CLASS =
+  "relative grid h-9 w-9 place-items-center rounded-ilm-full text-ilm-ink transition-colors hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ilm-ink";
+
+const NAV_ICON_GROUP_CLASS =
+  "flex items-center gap-sp-1 rounded-ilm-full border border-ilm-border bg-ilm-surface p-1";
+
+function WishlistLink({ className }: { className?: string }) {
+  return (
+    <Link
+      href="/student/favorites"
+      aria-label="Sevimlilar"
+      className={cn(NAV_ICON_CLASS, className)}
+    >
+      <Icon icon={Heart} size={20} />
+    </Link>
+  );
+}
+
 export function PublicHeader() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -65,6 +90,7 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-ilm-border bg-white/50 backdrop-blur-md">
+      {user && <NotificationStreamProvider />}
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-sp-4 px-sp-4 md:gap-sp-6 md:px-sp-6 lg:h-20">
         <Link href="/" aria-label="IlmHub bosh sahifa" className="shrink-0">
           <Image
@@ -101,20 +127,22 @@ export function PublicHeader() {
         </nav>
 
         <div className="ml-auto hidden flex-1 max-w-xs lg:block">
-          <Field
-            shape="pill"
-            icon={Search}
-            placeholder="Kurs qidiring..."
-            aria-label="Kurs qidirish"
-          />
+          <CourseSearchField />
         </div>
 
         <div className="ml-auto hidden items-center gap-sp-2 lg:flex">
-          <CartLink count={cartCount} />
           {user ? (
-            <UserMenu user={user} />
+            <>
+              <div className={NAV_ICON_GROUP_CLASS}>
+                <WishlistLink />
+                <CartLink count={cartCount} className={NAV_ICON_CLASS} />
+                <NotificationsBell triggerClassName={NAV_ICON_CLASS} />
+              </div>
+              <UserMenu user={user} />
+            </>
           ) : (
             <>
+              <CartLink count={cartCount} />
               <Button variant="secondary" size="sm" asChild>
                 <Link href="/login">Kirish</Link>
               </Button>
@@ -158,12 +186,7 @@ export function PublicHeader() {
               />
             </Link>
 
-            <Field
-              shape="pill"
-              icon={Search}
-              placeholder="Kurs qidiring..."
-              aria-label="Kurs qidirish"
-            />
+            <CourseSearchField onSubmitted={() => setMobileOpen(false)} />
 
             <nav className="flex flex-col gap-sp-1">
               {navLinks.map((link) => {
@@ -199,7 +222,7 @@ export function PublicHeader() {
                     asChild
                   >
                     <Link
-                      href="/student/dashboard"
+                      href={dashboardPathForRole(user.role)}
                       onClick={() => setMobileOpen(false)}
                     >
                       {user.name}

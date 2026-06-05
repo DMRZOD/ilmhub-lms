@@ -85,11 +85,15 @@ export function useEnroll() {
   });
 }
 
-export function useFavorites(filters: FavoritesFiltersInput = {}) {
+export function useFavorites(
+  filters: FavoritesFiltersInput = {},
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: studentKeys.favorites(filters),
     queryFn: () => fetchMyFavorites(filters),
     staleTime: 30 * 1000,
+    enabled: options?.enabled ?? true,
   });
 }
 

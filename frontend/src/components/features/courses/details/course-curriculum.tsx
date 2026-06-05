@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Lock, PlayCircle } from "lucide-react";
 
 import {
@@ -7,6 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Icon } from "@/components/ui/icon";
+import { LessonPreviewModal } from "./lesson-preview-modal";
 import {
   formatDurationHours,
   formatDurationLabel,
@@ -23,6 +27,10 @@ export function CourseCurriculum({
   totalLessons: number;
   totalMinutes: number;
 }) {
+  const [preview, setPreview] = useState<{ id: string; title: string } | null>(
+    null,
+  );
+
   return (
     <div className="flex flex-col gap-sp-4">
       <div className="flex flex-wrap items-center justify-between gap-sp-2 text-t-14 text-fg-2">
@@ -88,6 +96,9 @@ export function CourseCurriculum({
                         {isPreview ? (
                           <button
                             type="button"
+                            onClick={() =>
+                              setPreview({ id: lesson.id, title: lesson.title })
+                            }
                             className="truncate text-left text-t-14 font-medium text-ilm-ink hover:underline"
                           >
                             {lesson.title}
@@ -114,6 +125,12 @@ export function CourseCurriculum({
           </AccordionItem>
         ))}
       </Accordion>
+
+      <LessonPreviewModal
+        lessonId={preview?.id ?? null}
+        title={preview?.title}
+        onClose={() => setPreview(null)}
+      />
     </div>
   );
 }

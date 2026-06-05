@@ -32,9 +32,6 @@ export default function SozlamalarPage() {
             <ArrowLeft className="h-4 w-4" />
             Orqaga
           </Link>
-          <span className="text-t-12 font-semibold uppercase tracking-ilm-wide text-fg-3">
-            Hisobingiz
-          </span>
           <h1 className="text-t-32 font-extrabold tracking-ilm-tight text-ilm-ink">
             Sozlamalar
           </h1>

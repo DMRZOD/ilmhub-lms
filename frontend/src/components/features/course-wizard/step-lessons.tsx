@@ -216,9 +216,25 @@ function VideoEditor({ lesson, auth }: { lesson: WizardLesson; auth: Auth }) {
           </Button>
         </div>
       ) : processing ? (
-        <div className="flex items-center gap-sp-2 rounded-ilm-xl border border-ilm-border bg-ilm-surface p-sp-4 text-t-14 text-fg-2">
-          <Loader2 className="h-4 w-4 animate-spin text-ilm-ink" />
-          Qayta ishlanyapti… (bir necha daqiqa olishi mumkin)
+        <div className="flex flex-col gap-sp-2 rounded-ilm-xl border border-ilm-border bg-ilm-surface p-sp-4">
+          <div className="flex items-center gap-sp-2 text-t-14 text-fg-2">
+            <Loader2 className="h-4 w-4 animate-spin text-ilm-ink" />
+            Qayta ishlanyapti… (bir necha daqiqa olishi mumkin)
+          </div>
+          <p className="text-t-12 text-fg-3">
+            Juda uzoq davom etyaptimi yoki xato yuz berdimi? Boshqa video
+            yuklab, qayta urinib ko&apos;ring.
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            iconLeft={RefreshCw}
+            onClick={() => inputRef.current?.click()}
+            className="self-start"
+          >
+            Boshqa video yuklash
+          </Button>
         </div>
       ) : (
         <button

@@ -3,6 +3,7 @@
 import './instrument';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
@@ -12,13 +13,19 @@ import { AppModule } from './app.module';
 import type { Env } from './config/env.schema';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
     rawBody: true,
   });
 
   app.useLogger(app.get(Logger));
   app.flushLogs();
+
+  // Avatars are uploaded as base64 data URLs in the JSON body (up to 2 MB
+  // decoded ≈ 2.7 MB encoded). The default body-parser limit is 100 KB, which
+  // rejects any real photo before it reaches the controller. Raise the JSON
+  // limit above the DTO cap; rawBody capture for Mux webhooks is preserved.
+  app.useBodyParser('json', { limit: '6mb' });
 
   app.use(
     helmet({

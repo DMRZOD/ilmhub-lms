@@ -12,6 +12,7 @@ import {
   Sse,
 } from '@nestjs/common';
 import { Body } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Observable } from 'rxjs';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -31,6 +32,9 @@ export class NotificationsController {
     return this.notifications.list(userId, query);
   }
 
+  // A long-lived SSE connection that auto-reconnects must never be rate
+  // limited — a 429 turns into a reconnect loop that perpetuates the 429.
+  @SkipThrottle()
   @Sse('me/notifications/stream')
   stream(@CurrentUser('id') userId: string): Observable<MessageEvent> {
     return this.notifications.subscribe(userId);

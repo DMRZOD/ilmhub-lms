@@ -16,7 +16,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_TITLE,
-    template: "%s — IlmHub",
+    // The brand suffix is derived from SITE_NAME so renaming the site is a
+    // one-line change in lib/seo/site.ts. Pages set only their short title
+    // (e.g. "Kurslar") and this appends " — IlmHub" once.
+    template: `%s — ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "IlmHub.uz platformasidan foydalanish qoidalari, foydalanuvchi va platforma majburiyatlari.",
   alternates: { canonical: "/terms" },
   openGraph: {
-    title: "Foydalanish shartlari — IlmHub",
+    title: "Foydalanish shartlari",
     description: "IlmHub.uz xizmatlaridan foydalanish shartlari.",
     url: "/terms",
   },

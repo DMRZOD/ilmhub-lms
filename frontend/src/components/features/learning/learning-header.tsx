@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ListChecks } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -8,28 +8,40 @@ import { Icon } from "@/components/ui/icon";
 import { Progress } from "@/components/ui/progress";
 
 interface Props {
-  courseSlug: string;
   courseTitle: string;
   progressPercent: number;
   onOpenSidebar?: () => void;
 }
 
 export function LearningHeader({
-  courseSlug,
   courseTitle,
   progressPercent,
   onOpenSidebar,
 }: Props) {
+  const router = useRouter();
+
+  // Return to wherever the student came from (dashboard or "Mening kurslarim").
+  // Fall back to the dashboard when the player was opened via a direct link and
+  // there is no in-app history to step back to.
+  function handleBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/student/dashboard");
+    }
+  }
+
   return (
     <header className="sticky top-0 z-30 border-b border-ilm-border bg-white/55 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1400px] items-center gap-sp-3 px-sp-4 py-sp-3 sm:px-sp-6">
-        <Link
-          href={`/courses/${courseSlug}`}
+        <button
+          type="button"
+          onClick={handleBack}
           className="inline-flex items-center gap-sp-2 rounded-ilm-full border border-ilm-border bg-ilm-bg px-sp-3 py-sp-2 text-t-13 font-semibold text-ilm-ink transition-colors hover:bg-ilm-surface"
         >
           <Icon icon={ArrowLeft} size={14} />
-          <span className="hidden sm:inline">Kursga qaytish</span>
-        </Link>
+          <span className="hidden sm:inline">Orqaga</span>
+        </button>
         <div className="hidden min-w-0 flex-1 md:block">
           <div className="truncate text-t-14 font-bold text-ilm-ink">
             {courseTitle}

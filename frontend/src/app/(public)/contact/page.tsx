@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "IlmHub jamoasiga savol bering, taklif yuboring yoki hamkorlikni muhokama qiling. Telefon, email va ofis manzili.",
   alternates: { canonical: "/contact" },
   openGraph: {
-    title: "Bog'lanish — IlmHub",
+    title: "Bog'lanish",
     description: "IlmHub jamoasi bilan bog'lanish kanallari.",
     url: "/contact",
   },

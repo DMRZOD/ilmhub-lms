@@ -12,6 +12,7 @@ import {
   toEnrolledCourse,
   type EnrolledCourseDto,
 } from './enrollment.mapper';
+import { resolveResumeLessonIds } from './resume-lesson.util';
 import type {
   EnrollmentSort,
   EnrollmentStatusFilter,
@@ -216,6 +217,12 @@ export class EnrollmentsService {
 
     const courseIds = rows.map((r) => r.courseId);
 
+    const resumeByCourse = await resolveResumeLessonIds(
+      this.prisma,
+      userId,
+      courseIds,
+    );
+
     const progressRows = await this.prisma.lessonProgress.findMany({
       where: {
         userId,
@@ -259,6 +266,7 @@ export class EnrollmentsService {
         progressPercent,
         lastAccessedAt,
         reviewedCourses.has(row.courseId),
+        resumeByCourse.get(row.courseId) ?? null,
       );
       return {
         dto,

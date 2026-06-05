@@ -12,7 +12,9 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { organizationSchema, websiteSchema } from "@/lib/seo/schema";
 
 export const metadata: Metadata = {
-  title: "IlmHub — Kelajak kasbingizni bugun o'rganing",
+  // `absolute` opts out of the root title template so the home tab title isn't
+  // suffixed with " — IlmHub" again.
+  title: { absolute: "IlmHub — Kelajak kasbingizni bugun o'rganing" },
   description:
     "O'zbekistondagi #1 IT ta'lim platformasi. Frontend, Backend, Dizayn, Data Science va boshqa yo'nalishlar bo'yicha onlayn kurslar.",
 };

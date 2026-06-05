@@ -49,11 +49,16 @@ export function TestimonialsSection() {
 
       <div className="mt-sp-10 flex flex-col gap-sp-6">
         <div ref={emblaRef} className="overflow-hidden">
-          <div className="flex gap-sp-5">
+          {/* Spacing via per-slide padding-left + negative container margin
+              (not CSS `gap`): with loop:true, flex `gap` isn't rendered at the
+              seam where Embla transforms the first slide after the last, so the
+              ends would stick together. Per-slide padding travels with each
+              slide, keeping the gap consistent around the loop. */}
+          <div className="-ml-sp-5 flex">
             {testimonials.map((t) => (
               <div
                 key={t.id}
-                className="min-w-0 flex-[0_0_100%] md:flex-[0_0_calc(50%-12px)] lg:flex-[0_0_calc(33.333%-14px)]"
+                className="min-w-0 flex-[0_0_100%] pl-sp-5 md:flex-[0_0_50%] lg:flex-[0_0_33.333%]"
               >
                 <TestimonialCard testimonial={t} />
               </div>

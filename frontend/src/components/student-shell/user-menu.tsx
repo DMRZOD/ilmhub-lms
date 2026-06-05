@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut, Settings, User } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLogout } from "@/features/auth/hooks";
+import { dashboardsForRole } from "@/features/auth/roles";
 import type { DashboardUser } from "@/features/student/types";
 
 function initials(name: string) {
@@ -65,6 +66,15 @@ export function StudentUserMenu({ user }: { user: DashboardUser }) {
             {user.email}
           </span>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {dashboardsForRole(user.role).map((target) => (
+          <DropdownMenuItem key={target.role} asChild>
+            <Link href={target.href} className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              {target.label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/student/profile" className="flex items-center gap-2">

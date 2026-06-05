@@ -2,6 +2,7 @@ import { api } from "@/lib/api-client";
 
 import type {
   LessonDetail,
+  LessonPreviewResponse,
   PlaybackTokenResponse,
   ProgressDto,
 } from "./types";
@@ -9,6 +10,16 @@ import type {
 export async function fetchLesson(id: string): Promise<LessonDetail> {
   const { data } = await api.get<LessonDetail>(
     `/lessons/${encodeURIComponent(id)}`,
+  );
+  return data;
+}
+
+/** Public free-preview playback for a lesson — works for anonymous viewers. */
+export async function fetchLessonPreview(
+  id: string,
+): Promise<LessonPreviewResponse> {
+  const { data } = await api.get<LessonPreviewResponse>(
+    `/lessons/${encodeURIComponent(id)}/preview`,
   );
   return data;
 }

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { SevimlilarContent } from "./favorites-content";
 
 export const metadata: Metadata = {
-  title: "Sevimlilar · IlmHub",
+  title: "Sevimlilar",
 };
 
 export default function SevimlilarPage() {

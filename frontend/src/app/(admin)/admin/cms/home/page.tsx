@@ -4,7 +4,7 @@ import { CmsNav } from "../cms-nav";
 import { HomeContent } from "./home-content";
 
 export const metadata: Metadata = {
-  title: "CMS · Bosh sahifa · IlmHub",
+  title: "CMS · Bosh sahifa",
 };
 
 export default function CmsHomePage() {

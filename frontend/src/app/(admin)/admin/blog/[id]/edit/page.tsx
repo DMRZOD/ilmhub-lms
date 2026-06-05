@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { BlogEditorForm } from "../../blog-editor-form";
 
 export const metadata: Metadata = {
-  title: "Postni tahrirlash · IlmHub",
+  title: "Postni tahrirlash",
 };
 
 export default async function EditBlogPostPage({

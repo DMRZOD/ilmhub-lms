@@ -111,7 +111,6 @@ export function CourseSidebar({ course }: { course: CourseDetail }) {
     course.currentUserProgress?.lastLessonId ??
     course.sections[0]?.lessons[0]?.id ??
     null;
-  const resumeLessonTitle = course.currentUserProgress?.lastLessonTitle ?? null;
 
   function handlePrimaryClick() {
     if (isEnrolled) {
@@ -147,14 +146,8 @@ export function CourseSidebar({ course }: { course: CourseDetail }) {
     router.push("/checkout");
   }
 
-  function truncateTitle(value: string, max = 28) {
-    return value.length > max ? `${value.slice(0, max - 1)}…` : value;
-  }
-
   const primaryLabel = isEnrolled
-    ? resumeLessonTitle
-      ? `Davom etish: "${truncateTitle(resumeLessonTitle)}"`
-      : "Davom etish"
+    ? "Davom etish"
     : isFree
       ? "Bepul boshlash"
       : "Sotib olish";

@@ -5,7 +5,7 @@ import { CertificateVerifyContent } from "@/components/features/certificate/cert
 type RouteParams = { number: string };
 
 export const metadata: Metadata = {
-  title: "Sertifikatni tekshirish — IlmHub",
+  title: "Sertifikatni tekshirish",
   description: "IlmHub sertifikatining haqiqiyligini tekshiring.",
 };
 

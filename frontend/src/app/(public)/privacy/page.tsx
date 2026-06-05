@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "IlmHub foydalanuvchilarining shaxsiy ma'lumotlarini qanday yig'amiz, saqlaymiz va himoya qilamiz.",
   alternates: { canonical: "/privacy" },
   openGraph: {
-    title: "Maxfiylik siyosati — IlmHub",
+    title: "Maxfiylik siyosati",
     description: "IlmHub maxfiylik siyosati va ma'lumotlarni himoya qilish qoidalari.",
     url: "/privacy",
   },

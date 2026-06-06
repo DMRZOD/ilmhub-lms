@@ -1,33 +1,15 @@
-import * as vm from 'vm';
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { CodingLanguage } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { LessonsService } from '../lessons/lessons.service';
 import { SubmitCodeDto } from './dto/submit-code.dto';
-
-interface RawTestCase {
-  input: string;
-  expectedOutput: string;
-  description?: string | null;
-  weight?: number;
-}
-
-export interface TestResult {
-  index: number;
-  description: string | null;
-  passed: boolean;
-  output: string;
-  expected: string;
-  error?: string;
-}
+import { executeTests, type RawTestCase } from './coding-grader';
 
 @Injectable()
 export class CodingService {
@@ -57,11 +39,26 @@ export class CodingService {
     }
 
     const tests = (exercise.tests as unknown as RawTestCase[]) ?? [];
+
+    // Restore the student's most recent attempt so they pick up where they left off.
+    const lastSubmission = await this.prisma.codingSubmission.findFirst({
+      where: { userId, exerciseId: exercise.id },
+      orderBy: { createdAt: 'desc' },
+      select: { code: true },
+    });
+
     return {
       id: exercise.id,
       language: exercise.language,
+      entryFunction: exercise.entryFunction,
       starterCode: exercise.starterCode,
-      tests: tests.map((t, i) => ({ index: i, description: t.description ?? null })),
+      lastSubmittedCode: lastSubmission?.code ?? null,
+      // Inputs are example cases the student may see; expected outputs stay hidden.
+      tests: tests.map((t, i) => ({
+        index: i,
+        description: t.description ?? null,
+        args: t.input,
+      })),
     };
   }
 
@@ -85,7 +82,12 @@ export class CodingService {
     if (!enrolled) throw new ForbiddenException('not_enrolled');
 
     const tests = (exercise.tests as unknown as RawTestCase[]) ?? [];
-    const results = this.executeTests(dto.code, tests, exercise.language);
+    const results = executeTests(
+      dto.code,
+      tests,
+      exercise.language,
+      exercise.entryFunction,
+    );
 
     const sumWeights = tests.reduce((s, t) => s + (t.weight ?? 1), 0);
     const sumPassed = results.reduce(
@@ -148,51 +150,4 @@ export class CodingService {
     return submissions;
   }
 
-  private executeTests(
-    code: string,
-    tests: RawTestCase[],
-    language: CodingLanguage,
-  ): TestResult[] {
-    if (language !== CodingLanguage.JS && language !== CodingLanguage.TS) {
-      throw new BadRequestException('language_not_supported_yet');
-    }
-
-    return tests.map((test, index) => {
-      const outputLines: string[] = [];
-      const safeConsole = {
-        log: (...args: unknown[]) =>
-          outputLines.push(args.map(String).join(' ')),
-        error: (...args: unknown[]) =>
-          outputLines.push(args.map(String).join(' ')),
-        warn: (...args: unknown[]) =>
-          outputLines.push(args.map(String).join(' ')),
-      };
-
-      try {
-        const ctx = vm.createContext({ console: safeConsole });
-        vm.runInContext(code, ctx, { timeout: 5000 });
-        const result = vm.runInContext(test.input, ctx, { timeout: 5000 });
-        const output = outputLines.join('\n') || String(result ?? '');
-        const passed = output.trim() === test.expectedOutput.trim();
-
-        return {
-          index,
-          description: test.description ?? null,
-          passed,
-          output,
-          expected: test.expectedOutput,
-        };
-      } catch (err) {
-        const error = (err as Error).message;
-        return {
-          index,
-          description: test.description ?? null,
-          passed: false,
-          output: outputLines.join('\n'),
-          expected: test.expectedOutput,
-          error,
-        };
-      }
-    });
-  }
 }

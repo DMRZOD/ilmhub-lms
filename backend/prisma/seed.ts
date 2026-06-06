@@ -419,6 +419,7 @@ async function seedCuratedCourses(
             data: {
               lessonId: lesson.id,
               language: l.coding.language,
+              entryFunction: l.coding.entryFunction,
               starterCode: l.coding.starterCode,
               solutionCode: l.coding.solutionCode,
               tests: l.coding.tests as Prisma.InputJsonValue,

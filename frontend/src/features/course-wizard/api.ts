@@ -148,6 +148,7 @@ export async function updateLessonContent(
 // ------------------------------------------------------------- step 6 (coding)
 export type CodingPayload = {
   language: CodingLanguage;
+  entryFunction: string;
   starterCode: string;
   solutionCode: string;
   tests: CodingTest[];

@@ -229,24 +229,29 @@ export class LessonsService {
     const enrolled = await this.enrollments.isUserEnrolled(userId, courseId);
     if (!enrolled) throw new ForbiddenException('not_enrolled');
 
-    const markCompleted = dto.completed === true;
     const now = new Date();
+    // Tri-state: true → mark complete, false → clear completion, undefined → leave as is.
+    const completedAt =
+      dto.completed === true ? now : dto.completed === false ? null : undefined;
 
     await this.prisma.lessonProgress.upsert({
       where: { userId_lessonId: { userId, lessonId } },
       create: {
         userId,
         lessonId,
-        lastPositionSeconds: dto.positionSeconds,
-        completedAt: markCompleted ? now : null,
+        lastPositionSeconds: dto.positionSeconds ?? 0,
+        completedAt: completedAt ?? null,
       },
       update: {
-        lastPositionSeconds: dto.positionSeconds,
-        ...(markCompleted ? { completedAt: now } : {}),
+        // A completion-only toggle omits the position; keep the saved one.
+        ...(dto.positionSeconds !== undefined
+          ? { lastPositionSeconds: dto.positionSeconds }
+          : {}),
+        ...(completedAt !== undefined ? { completedAt } : {}),
       },
     });
 
-    if (markCompleted) {
+    if (dto.completed === true) {
       await this.maybeCompleteCourse(userId, courseId);
     }
 

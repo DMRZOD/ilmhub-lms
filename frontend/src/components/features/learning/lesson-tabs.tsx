@@ -44,11 +44,6 @@ export function LessonTabs({
           ) : (
             <p className="text-t-14 text-fg-3">Dars uchun tavsif kiritilmagan.</p>
           )}
-          {lesson.articleContent && (
-            <div className="mt-sp-4 whitespace-pre-line text-t-14 leading-relaxed text-fg-1">
-              {lesson.articleContent}
-            </div>
-          )}
         </div>
       </TabsContent>
 

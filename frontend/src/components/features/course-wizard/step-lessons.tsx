@@ -162,8 +162,15 @@ function VideoEditor({ lesson, auth }: { lesson: WizardLesson; auth: Auth }) {
         setProgress(null);
         auth.invalidate();
       });
-    } catch {
-      toast.error("Yuklashni boshlab bo'lmadi");
+    } catch (err) {
+      const code = (
+        err as { response?: { data?: { message?: string } } }
+      )?.response?.data?.message;
+      toast.error(
+        code === "mux_asset_limit_reached"
+          ? "Video xotirasi limiti to'ldi. Iltimos, keyinroq qayta urinib ko'ring."
+          : "Yuklashni boshlab bo'lmadi",
+      );
       setUploading(false);
       setProgress(null);
     }

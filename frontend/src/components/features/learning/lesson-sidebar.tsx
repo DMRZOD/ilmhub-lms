@@ -24,7 +24,6 @@ import { cn } from "@/lib/utils";
 import type {
   CurriculumLesson,
   CurriculumSection,
-  LessonType,
 } from "@/features/learning/types";
 
 function formatLessonDuration(seconds: number): string {
@@ -34,17 +33,33 @@ function formatLessonDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function lessonTypeIcon(type: LessonType): LucideIcon {
-  switch (type) {
+/**
+ * Type icon + meta label shown on a lesson row's second line. The type icon
+ * stays visible regardless of completion, so a finished lesson is still
+ * recognisable as a video / article / quiz / coding exercise. Only videos show
+ * a duration; the other types show a short type label instead of a meaningless
+ * `0:00`.
+ */
+function lessonTypeMeta(lesson: CurriculumLesson): {
+  icon: LucideIcon;
+  label: string;
+} {
+  switch (lesson.type) {
     case "ARTICLE":
-      return FileText;
+      return { icon: FileText, label: "Maqola" };
     case "QUIZ":
-      return HelpCircle;
+      return { icon: HelpCircle, label: "Test" };
     case "CODING":
-      return Terminal;
+      return { icon: Terminal, label: "Mashq" };
     case "VIDEO":
     default:
-      return PlayCircle;
+      return {
+        icon: PlayCircle,
+        label:
+          lesson.durationSeconds > 0
+            ? formatLessonDuration(lesson.durationSeconds)
+            : "Video",
+      };
   }
 }
 
@@ -55,6 +70,7 @@ interface Props {
   totalLessons: number;
   onLessonClick?: () => void;
   onLessonHover?: (lessonId: string) => void;
+  onToggleComplete?: (lessonId: string, completed: boolean) => void;
 }
 
 export const LessonSidebar = React.memo(function LessonSidebar({
@@ -64,11 +80,27 @@ export const LessonSidebar = React.memo(function LessonSidebar({
   totalLessons,
   onLessonClick,
   onLessonHover,
+  onToggleComplete,
 }: Props) {
-  const defaultOpen = React.useMemo(
-    () => sections.map((s) => s.id),
-    [sections],
+  // The section holding the current lesson — the only one open by default.
+  const currentSectionId = React.useMemo(() => {
+    const owning = sections.find((s) =>
+      s.lessons.some((l) => l.id === currentLessonId),
+    );
+    return owning?.id ?? sections[0]?.id;
+  }, [sections, currentLessonId]);
+
+  // Controlled so navigating into a collapsed section auto-expands it while
+  // keeping the user's other manual expansions intact (Udemy-style).
+  const [openSections, setOpenSections] = React.useState<string[]>(() =>
+    currentSectionId ? [currentSectionId] : [],
   );
+  React.useEffect(() => {
+    if (!currentSectionId) return;
+    setOpenSections((prev) =>
+      prev.includes(currentSectionId) ? prev : [...prev, currentSectionId],
+    );
+  }, [currentSectionId]);
 
   return (
     <aside className="flex h-full flex-col gap-sp-4 rounded-ilm-3xl border border-ilm-border bg-ilm-bg p-sp-4">
@@ -80,7 +112,8 @@ export const LessonSidebar = React.memo(function LessonSidebar({
       </div>
       <Accordion
         type="multiple"
-        defaultValue={defaultOpen}
+        value={openSections}
+        onValueChange={setOpenSections}
         className="flex flex-col"
       >
         {sections.map((section) => (
@@ -90,6 +123,7 @@ export const LessonSidebar = React.memo(function LessonSidebar({
             currentLessonId={currentLessonId}
             onLessonClick={onLessonClick}
             onLessonHover={onLessonHover}
+            onToggleComplete={onToggleComplete}
           />
         ))}
       </Accordion>
@@ -102,11 +136,13 @@ function SectionBlock({
   currentLessonId,
   onLessonClick,
   onLessonHover,
+  onToggleComplete,
 }: {
   section: CurriculumSection;
   currentLessonId: string;
   onLessonClick?: () => void;
   onLessonHover?: (lessonId: string) => void;
+  onToggleComplete?: (lessonId: string, completed: boolean) => void;
 }) {
   const completedInSection = section.lessons.filter((l) => l.completed).length;
   const totalInSection = section.lessons.length;
@@ -132,6 +168,7 @@ function SectionBlock({
                 isCurrent={lesson.id === currentLessonId}
                 onClick={onLessonClick}
                 onHover={onLessonHover}
+                onToggleComplete={onToggleComplete}
               />
             </li>
           ))}
@@ -146,11 +183,13 @@ function LessonRow({
   isCurrent,
   onClick,
   onHover,
+  onToggleComplete,
 }: {
   lesson: CurriculumLesson;
   isCurrent: boolean;
   onClick?: () => void;
   onHover?: (lessonId: string) => void;
+  onToggleComplete?: (lessonId: string, completed: boolean) => void;
 }) {
   const rowRef = React.useRef<HTMLDivElement>(null);
 
@@ -160,62 +199,117 @@ function LessonRow({
     }
   }, [isCurrent]);
 
-  const TypeIcon = lessonTypeIcon(lesson.type);
+  const meta = lessonTypeMeta(lesson);
 
-  const content = (
-    <div
-      ref={rowRef}
-      data-current={isCurrent || undefined}
-      className={cn(
-        "relative flex items-center gap-sp-3 rounded-ilm-xl px-sp-3 py-sp-2 transition-colors",
-        isCurrent
-          ? "bg-ilm-surface font-bold text-ilm-ink before:absolute before:left-0 before:top-1 before:bottom-1 before:w-[3px] before:rounded-ilm-full before:bg-ilm-ink"
-          : lesson.locked
-            ? "cursor-not-allowed text-fg-3"
-            : "text-ilm-ink hover:bg-ilm-surface",
-      )}
-    >
+  const titleAndMeta = (
+    <>
       <span
         className={cn(
-          "grid h-6 w-6 shrink-0 place-items-center rounded-ilm-full",
-          lesson.completed
-            ? "bg-ilm-success text-white"
-            : lesson.locked
-              ? "bg-ilm-border text-fg-3"
-              : "bg-ilm-border text-ilm-ink",
-        )}
-      >
-        {lesson.completed ? (
-          <Icon icon={Check} size={12} />
-        ) : lesson.locked ? (
-          <Icon icon={Lock} size={10} />
-        ) : (
-          <Icon icon={TypeIcon} size={12} />
-        )}
-      </span>
-      <span
-        className={cn(
-          "flex-1 truncate text-t-13",
-          isCurrent ? "font-bold" : "font-medium",
+          "truncate text-t-13",
+          isCurrent ? "font-bold text-ilm-ink" : "font-medium",
+          lesson.locked && "text-fg-3",
         )}
       >
         {lesson.title}
       </span>
-      <span className="text-t-11 font-semibold tabular-nums text-fg-3">
-        {formatLessonDuration(lesson.durationSeconds)}
+      <span className="mt-0.5 flex items-center gap-sp-2 text-t-11 font-medium text-fg-3">
+        <Icon icon={meta.icon} size={13} className="shrink-0" />
+        <span className="tabular-nums">{meta.label}</span>
       </span>
-    </div>
+    </>
   );
 
-  if (lesson.locked) return content;
   return (
-    <Link
-      href={`/lesson/${lesson.id}`}
-      onClick={onClick}
-      onMouseEnter={() => onHover?.(lesson.id)}
-      className="block focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ilm-ink focus-visible:ring-offset-1 focus-visible:ring-offset-ilm-paper"
+    <div
+      ref={rowRef}
+      data-current={isCurrent || undefined}
+      className={cn(
+        "flex items-center gap-sp-3 rounded-ilm-md px-sp-2 py-sp-2 transition-colors",
+        isCurrent
+          ? "bg-ilm-surface shadow-ilm-xs ring-1 ring-inset ring-ilm-border"
+          : lesson.locked
+            ? "text-fg-3"
+            : "hover:bg-ilm-surface",
+      )}
     >
-      {content}
-    </Link>
+      <CompletionCheckbox
+        lesson={lesson}
+        onToggle={
+          onToggleComplete
+            ? () => onToggleComplete(lesson.id, !lesson.completed)
+            : undefined
+        }
+      />
+
+      {lesson.locked ? (
+        <span className="flex min-w-0 flex-1 cursor-not-allowed flex-col">
+          {titleAndMeta}
+        </span>
+      ) : (
+        <Link
+          href={`/lesson/${lesson.id}`}
+          onClick={onClick}
+          onMouseEnter={() => onHover?.(lesson.id)}
+          className="flex min-w-0 flex-1 flex-col rounded-ilm-md text-ilm-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ilm-ink focus-visible:ring-offset-1 focus-visible:ring-offset-ilm-paper"
+        >
+          {titleAndMeta}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The per-lesson completion control: a circle that shows the type-agnostic
+ * "done" state. For unlocked lessons it's a toggle button (mark / un-mark);
+ * locked lessons render a static lock instead.
+ */
+function CompletionCheckbox({
+  lesson,
+  onToggle,
+}: {
+  lesson: CurriculumLesson;
+  onToggle?: () => void;
+}) {
+  const base =
+    "grid h-6 w-6 shrink-0 place-items-center rounded-ilm-full transition-colors";
+
+  if (lesson.locked) {
+    return (
+      <span className={cn(base, "bg-ilm-border text-fg-3")} aria-hidden>
+        <Icon icon={Lock} size={11} />
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={!onToggle}
+      aria-pressed={lesson.completed}
+      aria-label={
+        lesson.completed
+          ? "Bajarildi deb belgilangan — bekor qilish"
+          : "Bajarildi deb belgilash"
+      }
+      className={cn(
+        "group/cb focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ilm-ink focus-visible:ring-offset-1 focus-visible:ring-offset-ilm-paper",
+        base,
+        lesson.completed
+          ? "bg-ilm-success text-white hover:bg-ilm-success/90"
+          : "border border-ilm-border text-ilm-ink hover:border-ilm-ink/50",
+      )}
+    >
+      <Icon
+        icon={Check}
+        size={13}
+        className={cn(
+          lesson.completed
+            ? "opacity-100"
+            : "opacity-0 transition-opacity group-hover/cb:opacity-40",
+        )}
+      />
+    </button>
   );
 }

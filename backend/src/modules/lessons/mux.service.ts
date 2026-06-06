@@ -69,18 +69,47 @@ export class MuxService {
     if (!this.client) {
       throw new ServiceUnavailableException('mux_not_configured');
     }
-    const upload = await this.client.video.uploads.create({
-      cors_origin: corsOrigin,
-      new_asset_settings: {
-        playback_policies: ['public'],
-        video_quality: 'basic',
-        passthrough: lessonId,
-      },
-    });
+    let upload;
+    try {
+      upload = await this.client.video.uploads.create({
+        cors_origin: corsOrigin,
+        new_asset_settings: {
+          playback_policies: ['public'],
+          video_quality: 'basic',
+          passthrough: lessonId,
+        },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      // Mux's free plan caps the account at 10 assets and rejects new direct
+      // uploads past that. Surface a dedicated code so the UI can explain it
+      // instead of bubbling up as a generic 500.
+      if (/limited to .*assets/i.test(message)) {
+        this.logger.error(`Mux asset limit reached: ${message}`);
+        throw new ServiceUnavailableException('mux_asset_limit_reached');
+      }
+      this.logger.error(`Mux direct upload failed: ${message}`);
+      throw new ServiceUnavailableException('mux_upload_failed');
+    }
     if (!upload.url) {
       throw new ServiceUnavailableException('mux_upload_url_missing');
     }
     return { uploadId: upload.id, url: upload.url };
+  }
+
+  /**
+   * Best-effort delete of a Mux asset. Used when a lesson's video is replaced
+   * or the lesson is removed, so we don't leak assets and exhaust the plan's
+   * asset cap. Never throws — a missing/already-deleted asset is fine.
+   */
+  async deleteAsset(assetId: string): Promise<void> {
+    if (!this.client) return;
+    try {
+      await this.client.video.assets.delete(assetId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Failed to delete Mux asset ${assetId}: ${message}`);
+    }
   }
 
   /**

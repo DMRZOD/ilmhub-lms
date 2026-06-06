@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLessonAuthoring } from "@/features/course-wizard/hooks";
 import {
-  CODING_LANGUAGES,
   CODING_LANGUAGE_LABELS,
   CODING_LANGUAGE_MONACO,
+  WIZARD_CODING_LANGUAGES,
   type CodingLanguage,
   type CodingTest,
   type WizardCourse,
@@ -64,8 +64,12 @@ function CodingCard({
   auth: Auth;
 }) {
   const initial = lesson.coding;
+  // Only JS/TS are auto-gradable; coerce any legacy language to JS for editing.
   const [language, setLanguage] = useState<CodingLanguage>(
-    initial?.language ?? "JS",
+    initial?.language === "TS" ? "TS" : "JS",
+  );
+  const [entryFunction, setEntryFunction] = useState(
+    initial?.entryFunction ?? "",
   );
   const [starterCode, setStarterCode] = useState(initial?.starterCode ?? "");
   const [solutionCode, setSolutionCode] = useState(initial?.solutionCode ?? "");
@@ -74,6 +78,10 @@ function CodingCard({
   const monacoLang = CODING_LANGUAGE_MONACO[language];
 
   const onSave = () => {
+    if (entryFunction.trim() === "") {
+      toast.error("Funksiya nomini kiriting");
+      return;
+    }
     const cleaned = tests.filter(
       (t) =>
         t.input.trim() !== "" ||
@@ -83,7 +91,13 @@ function CodingCard({
     auth.upsertCoding.mutate(
       {
         lessonId: lesson.id,
-        payload: { language, starterCode, solutionCode, tests: cleaned },
+        payload: {
+          language,
+          entryFunction: entryFunction.trim(),
+          starterCode,
+          solutionCode,
+          tests: cleaned,
+        },
       },
       {
         onSuccess: () => toast.success("Kod mashqi saqlandi"),
@@ -111,13 +125,26 @@ function CodingCard({
             onChange={(e) => setLanguage(e.target.value as CodingLanguage)}
             className="rounded-ilm-md border border-ilm-border bg-ilm-paper px-sp-2 py-1 text-t-12 text-ilm-ink outline-none"
           >
-            {CODING_LANGUAGES.map((l) => (
+            {WIZARD_CODING_LANGUAGES.map((l) => (
               <option key={l} value={l}>
                 {CODING_LANGUAGE_LABELS[l]}
               </option>
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-sp-2">
+        <label className={cn(LABEL_CLASS, "text-t-12")}>
+          Funksiya nomi (testlar shu funksiyani chaqiradi)
+        </label>
+        <input
+          value={entryFunction}
+          placeholder="masalan: add"
+          maxLength={120}
+          onChange={(e) => setEntryFunction(e.target.value)}
+          className={cn(INPUT_CLASS, "py-1.5 font-mono text-t-12 sm:max-w-xs")}
+        />
       </div>
 
       <div className="grid gap-sp-4 lg:grid-cols-2">
@@ -145,6 +172,14 @@ function CodingCard({
 
       <div className="flex flex-col gap-sp-2">
         <span className={cn(LABEL_CLASS, "text-t-12")}>Testlar</span>
+        <p className="text-t-12 text-fg-3">
+          Argumentlar — JSON massiv (masalan{" "}
+          <code className="font-mono">[2, 3]</code> yoki{" "}
+          <code className="font-mono">[[1, 2, 3]]</code> bitta massiv argument
+          uchun). Natija qiymat sifatida solishtiriladi (masalan{" "}
+          <code className="font-mono">5</code> yoki{" "}
+          <code className="font-mono">[1, 2, 3]</code>).
+        </p>
         {tests.length === 0 && (
           <p className="text-t-12 text-fg-3">
             Hozircha test yo&apos;q. Kamida bitta test qo&apos;shing.
@@ -159,14 +194,14 @@ function CodingCard({
               <textarea
                 value={t.input}
                 rows={2}
-                placeholder="Kirish (input)"
+                placeholder="Argumentlar (JSON), masalan: [2, 3]"
                 onChange={(e) => updateTest(i, { input: e.target.value })}
                 className={cn(INPUT_CLASS, "font-mono text-t-12")}
               />
               <textarea
                 value={t.expectedOutput}
                 rows={2}
-                placeholder="Kutilgan natija (output)"
+                placeholder="Kutilgan natija, masalan: 5"
                 onChange={(e) =>
                   updateTest(i, { expectedOutput: e.target.value })
                 }

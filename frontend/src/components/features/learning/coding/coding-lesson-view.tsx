@@ -12,7 +12,6 @@ import {
   Circle,
   Clock,
   Code2,
-  Lightbulb,
   Loader2,
   Play,
   RefreshCw,
@@ -29,6 +28,7 @@ import {
 import { fetchSolutionCode } from "@/features/learning/coding-api";
 import type {
   CodingExerciseDetail,
+  CodingTestStub,
   SubmissionHistoryItem,
   SubmitCodeResult,
   TestResult,
@@ -38,6 +38,8 @@ import { CODING_LANGUAGE_MONACO } from "@/features/course-wizard/schemas";
 import { cn } from "@/lib/utils";
 import { CodeEditor } from "@/components/features/course-wizard/code-editor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import type { WorkerCaseResult, WorkerInput, WorkerOutput } from "./code-worker";
 
 // ---------------------------------------------------------------------------
 // Content column (the learning header + sidebar come from LearningShell)
@@ -55,7 +57,8 @@ export function CodingLessonContent({
       <div className="text-t-12 font-bold uppercase tracking-wider text-fg-3">
         {lesson.section.title}
       </div>
-      <CodingView lessonId={lessonId} lesson={lesson} />
+      {/* Remount per lesson so the editor + results never leak across exercises. */}
+      <CodingView key={lessonId} lessonId={lessonId} lesson={lesson} />
     </>
   );
 }
@@ -76,10 +79,9 @@ function CodingView({
   const exercise = exerciseQuery.data;
 
   const [code, setCode] = React.useState<string>("");
-  const [runOutput, setRunOutput] = React.useState<{
-    output: string;
-    error?: string;
-  } | null>(null);
+  const [runResults, setRunResults] = React.useState<WorkerCaseResult[] | null>(
+    null,
+  );
   const [submitResult, setSubmitResult] = React.useState<SubmitCodeResult | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [solutionViewed, setSolutionViewed] = React.useState(false);
@@ -89,11 +91,14 @@ function CodingView({
 
   const submitMutation = useSubmitCode(exercise?.id ?? "", lessonId);
 
+  // Seed the editor once with the student's last attempt (or the starter code).
+  const initialized = React.useRef(false);
   React.useEffect(() => {
-    if (exercise && !code) {
-      setCode(exercise.starterCode);
+    if (exercise && !initialized.current) {
+      initialized.current = true;
+      setCode(exercise.lastSubmittedCode ?? exercise.starterCode);
     }
-  }, [exercise, code]);
+  }, [exercise]);
 
   const monacoLang =
     exercise?.language && exercise.language in CODING_LANGUAGE_MONACO
@@ -105,14 +110,8 @@ function CodingView({
   const handleReset = () => {
     if (!exercise) return;
     setCode(exercise.starterCode);
-    setRunOutput(null);
+    setRunResults(null);
     setSubmitResult(null);
-  };
-
-  const handleHint = () => {
-    if (!exercise) return;
-    const hint = exercise.tests[0]?.description;
-    toast.info(hint ? `Maslahat: ${hint}` : "Maslahatlar yo'q");
   };
 
   const handleShowSolution = async () => {
@@ -123,7 +122,7 @@ function CodingView({
       setCode(solutionCode);
       setSolutionViewed(true);
       setShowSolutionConfirm(false);
-      toast.warning("Yechim ko'rsatildi. Ushbu urinish to'liq ball olmaydi.");
+      toast.info("Yechim ko'rsatildi.");
     } catch {
       toast.error("Yechimni yuklab bo'lmadi.");
     } finally {
@@ -132,39 +131,49 @@ function CodingView({
   };
 
   const handleRun = () => {
-    if (!code.trim()) return;
+    if (!exercise || !code.trim() || !exercise.entryFunction) return;
     setRunLoading(true);
     setSubmitResult(null);
+
+    const cases = exercise.tests.map((t) => ({ index: t.index, args: t.args }));
+    const finish = (results: WorkerCaseResult[]) => {
+      setRunResults(results);
+      setDrawerOpen(true);
+      setRunLoading(false);
+    };
+    const errorAll = (message: string) =>
+      finish(cases.map((c) => ({ index: c.index, output: "", error: message })));
 
     const worker = new Worker(new URL("./code-worker.ts", import.meta.url));
     const timer = setTimeout(() => {
       worker.terminate();
-      setRunOutput({ output: "", error: "Timeout: 5 soniyada bajarilmadi." });
-      setDrawerOpen(true);
-      setRunLoading(false);
+      errorAll("Timeout: 5 soniyada bajarilmadi.");
     }, 5000);
 
-    worker.onmessage = (e: MessageEvent<{ output: string; error?: string }>) => {
+    worker.onmessage = (e: MessageEvent<WorkerOutput>) => {
       clearTimeout(timer);
       worker.terminate();
-      setRunOutput(e.data);
-      setDrawerOpen(true);
-      setRunLoading(false);
+      finish(e.data.results);
     };
 
     worker.onerror = () => {
       clearTimeout(timer);
-      setRunOutput({ output: "", error: "Worker xatosi yuz berdi." });
-      setDrawerOpen(true);
-      setRunLoading(false);
+      worker.terminate();
+      errorAll("Worker xatosi yuz berdi.");
     };
 
-    worker.postMessage({ code });
+    const input: WorkerInput = {
+      code,
+      language: exercise.language,
+      entryFunction: exercise.entryFunction,
+      cases,
+    };
+    worker.postMessage(input);
   };
 
   const handleSubmit = () => {
     if (!exercise || !code.trim()) return;
-    setRunOutput(null);
+    setRunResults(null);
     submitMutation.mutate(
       { code, solutionViewed },
       {
@@ -312,14 +321,6 @@ function CodingView({
               <Button
                 variant="ghost"
                 size="sm"
-                iconLeft={Lightbulb}
-                onClick={handleHint}
-              >
-                Maslahat
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
                 iconLeft={Code2}
                 onClick={() => setShowSolutionConfirm(true)}
                 disabled={solutionViewed}
@@ -333,7 +334,7 @@ function CodingView({
                 size="sm"
                 iconLeft={Play}
                 onClick={handleRun}
-                disabled={runLoading}
+                disabled={runLoading || !code.trim()}
               >
                 {runLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -346,7 +347,7 @@ function CodingView({
                 size="sm"
                 iconLeft={Send}
                 onClick={handleSubmit}
-                disabled={submitMutation.isPending}
+                disabled={submitMutation.isPending || !code.trim()}
               >
                 {submitMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -357,15 +358,13 @@ function CodingView({
             </div>
           </div>
 
-          {/* Monaco editor */}
-          <div className="overflow-hidden rounded-ilm-xl border border-ilm-border">
-            <CodeEditor
-              value={code}
-              language={monacoLang}
-              onChange={(v) => setCode(v ?? "")}
-              height="calc(100vh - 420px)"
-            />
-          </div>
+          {/* Monaco editor (CodeEditor already provides the border + rounding) */}
+          <CodeEditor
+            value={code}
+            language={monacoLang}
+            onChange={(v) => setCode(v ?? "")}
+            height="clamp(320px, calc(100vh - 420px), 720px)"
+          />
 
           {/* Output drawer */}
           <div
@@ -376,7 +375,7 @@ function CodingView({
           >
             <div className="flex items-center justify-between border-b border-ilm-border bg-ilm-surface px-sp-3 py-sp-2">
               <span className="text-t-12 font-semibold text-ilm-ink">
-                {submitResult ? "Natijalar" : "Konsol chiqishi"}
+                {submitResult ? "Natijalar" : "Ishga tushirish natijasi"}
               </span>
               <button
                 type="button"
@@ -389,8 +388,8 @@ function CodingView({
             <div className="max-h-48 overflow-y-auto bg-ilm-ink p-sp-3 font-mono text-t-12 text-white">
               {submitResult ? (
                 <SubmitOutput result={submitResult} />
-              ) : runOutput ? (
-                <RunOutput result={runOutput} />
+              ) : runResults ? (
+                <RunOutput results={runResults} tests={exercise.tests} />
               ) : null}
             </div>
           </div>
@@ -599,19 +598,41 @@ function SubmissionRow({ submission }: { submission: SubmissionHistoryItem }) {
 // Output panels
 // ---------------------------------------------------------------------------
 
-function RunOutput({ result }: { result: { output: string; error?: string } }) {
+function RunOutput({
+  results,
+  tests,
+}: {
+  results: WorkerCaseResult[];
+  tests: CodingTestStub[];
+}) {
+  if (results.length === 0) {
+    return <span className="text-white/50">Test mavjud emas.</span>;
+  }
   return (
-    <div>
-      {result.error && (
-        <div className="mb-2 text-red-400">[Xato] {result.error}</div>
-      )}
-      {result.output ? (
-        <pre className="whitespace-pre-wrap">{result.output}</pre>
-      ) : (
-        !result.error && (
-          <span className="text-white/50">Chiqish yo&apos;q.</span>
-        )
-      )}
+    <div className="flex flex-col gap-2">
+      {results.map((r) => {
+        const args = tests.find((t) => t.index === r.index)?.args ?? "";
+        return (
+          <div key={r.index}>
+            <div className="text-white/60">
+              Kirish: <span className="text-white/90">{args}</span>
+            </div>
+            {r.error ? (
+              <div className="text-red-400">[Xato] {r.error}</div>
+            ) : (
+              <div>
+                <span className="text-white/60">Natija: </span>
+                <span className="text-white/90">{r.output || "(bo'sh)"}</span>
+              </div>
+            )}
+            {r.logs && (
+              <pre className="mt-0.5 whitespace-pre-wrap text-white/50">
+                {r.logs}
+              </pre>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

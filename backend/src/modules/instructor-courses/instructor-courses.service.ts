@@ -289,11 +289,16 @@ export class InstructorCoursesService {
   }
 
   async deleteLesson(lessonId: string, user: AuthenticatedUser) {
-    const { courseId, sectionId } = await this.requireOwnedLesson(
+    const { courseId, sectionId, videoAssetId } = await this.requireOwnedLesson(
       lessonId,
       user,
     );
     await this.prisma.lesson.delete({ where: { id: lessonId } });
+    // Free the Mux asset too — otherwise deleted lessons leak assets and
+    // eventually exhaust the plan's asset cap.
+    if (videoAssetId) {
+      await this.mux.deleteAsset(videoAssetId);
+    }
     await this.normalizeLessonOrders(sectionId);
     await this.recount(courseId);
     await this.flipPublishedToReview(courseId);
@@ -333,7 +338,13 @@ export class InstructorCoursesService {
     user: AuthenticatedUser,
     corsOrigin: string,
   ) {
-    const { courseId } = await this.requireOwnedLesson(lessonId, user);
+    const { courseId, videoAssetId: previousAssetId } =
+      await this.requireOwnedLesson(lessonId, user);
+    // Replacing a video orphans the old asset on Mux; delete it first so we both
+    // free a slot (the free plan caps the account at 10 assets) and don't leak.
+    if (previousAssetId) {
+      await this.mux.deleteAsset(previousAssetId);
+    }
     const upload = await this.mux.createDirectUpload(corsOrigin, lessonId);
     await this.prisma.lesson.update({
       where: { id: lessonId },
@@ -387,12 +398,14 @@ export class InstructorCoursesService {
       create: {
         lessonId,
         language: dto.language,
+        entryFunction: dto.entryFunction,
         starterCode: dto.starterCode,
         solutionCode: dto.solutionCode,
         tests,
       },
       update: {
         language: dto.language,
+        entryFunction: dto.entryFunction,
         starterCode: dto.starterCode,
         solutionCode: dto.solutionCode,
         tests,
@@ -693,7 +706,11 @@ export class InstructorCoursesService {
     });
     if (!lesson) throw new NotFoundException('lesson_not_found');
     this.assertOwner(lesson.section.course, user);
-    return { courseId: lesson.section.courseId, sectionId: lesson.section.id };
+    return {
+      courseId: lesson.section.courseId,
+      sectionId: lesson.section.id,
+      videoAssetId: lesson.videoAssetId,
+    };
   }
 
   private async requireOwnedQuestion(
@@ -901,6 +918,7 @@ export class InstructorCoursesService {
           coding: lesson.codingExercise
             ? {
                 language: lesson.codingExercise.language,
+                entryFunction: lesson.codingExercise.entryFunction,
                 starterCode: lesson.codingExercise.starterCode,
                 solutionCode: lesson.codingExercise.solutionCode,
                 tests: lesson.codingExercise.tests,

@@ -60,6 +60,9 @@ export const CODING_LANGUAGES = [
   "CPP",
   "GO",
 ] as const;
+
+// Only JS/TS can be auto-graded, so these are the only authorable languages.
+export const WIZARD_CODING_LANGUAGES = ["JS", "TS"] as const;
 export const codingLanguageSchema = z.enum([
   "JS",
   "TS",
@@ -90,6 +93,7 @@ export type CodingTest = z.infer<typeof codingTestSchema>;
 
 export const wizardCodingSchema = z.object({
   language: codingLanguageSchema,
+  entryFunction: z.string().default(""),
   starterCode: z.string(),
   solutionCode: z.string(),
   tests: z.array(codingTestSchema).catch([]),

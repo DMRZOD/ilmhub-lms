@@ -12,7 +12,6 @@ import type { LessonDetail } from "@/features/learning/types";
 
 import { AutoAdvanceOverlay } from "./auto-advance-overlay";
 import { CourseCompleteModal } from "./course-complete-modal";
-import { LessonActions } from "./lesson-actions";
 import { LessonTabs } from "./lesson-tabs";
 import {
   LessonVideoPlayer,
@@ -34,9 +33,10 @@ function findLessonTitle(
 }
 
 /**
- * The content column for a VIDEO/ARTICLE lesson: player, title + navigation,
- * completion action and the description/notes/Q&A/announcements tabs. Rendered
- * inside the persistent `LearningShell`, so switching lessons swaps only this.
+ * The content column for a VIDEO lesson: player, title + navigation, completion
+ * action and the description/notes/Q&A/announcements tabs. Rendered inside the
+ * persistent `LearningShell`, so switching lessons swaps only this. ARTICLE
+ * lessons have their own `ArticleLessonContent`.
  *
  * `isCurrent` is false during a keep-previous-data transition (the loaded
  * lesson hasn't caught up to the URL yet) — we show a player-area loader then,
@@ -118,10 +118,6 @@ export function VideoLessonContent({
   const handleEnded = React.useCallback(() => {
     triggerCompletion(lesson.durationSeconds);
   }, [lesson.durationSeconds, triggerCompletion]);
-
-  const handleManualComplete = React.useCallback(() => {
-    triggerCompletion(lesson.myProgress.lastPositionSeconds);
-  }, [lesson.myProgress.lastPositionSeconds, triggerCompletion]);
 
   const handleWatchedThreshold = React.useCallback(() => {
     triggerCompletion(lesson.myProgress.lastPositionSeconds);
@@ -222,11 +218,6 @@ export function VideoLessonContent({
             </Button>
           </div>
         </div>
-        <LessonActions
-          completed={isCompleted}
-          isSubmitting={updateProgress.isPending}
-          onComplete={handleManualComplete}
-        />
       </div>
 
       <LessonTabs

@@ -36,8 +36,11 @@ export interface CuratedQuizQuestion {
 
 export interface CuratedCoding {
   language: CodingLanguage;
+  /** Function the tests call, e.g. "add". */
+  entryFunction: string;
   starterCode: string;
   solutionCode: string;
+  /** `input` is a JSON array of arguments, e.g. "[2, 3]". */
   tests: { input: string; expectedOutput: string }[];
 }
 
@@ -111,64 +114,70 @@ const USD = (dollars: number) => Math.round(dollars * 100);
 // Reusable real coding exercises -------------------------------------------------
 
 const CODING_PY_SUM: CuratedCoding = {
-  language: CodingLanguage.PYTHON,
-  starterCode: 'def add(a, b):\n    # ikkita sonni qaytaring\n    pass\n',
-  solutionCode: 'def add(a, b):\n    return a + b\n',
+  language: CodingLanguage.JS,
+  entryFunction: 'add',
+  starterCode:
+    'function add(a, b) {\n  // ikkita sonni qo\'shib qaytaring\n}\n',
+  solutionCode: 'function add(a, b) {\n  return a + b;\n}\n',
   tests: [
-    { input: '2 3', expectedOutput: '5' },
-    { input: '-1 1', expectedOutput: '0' },
-    { input: '10 90', expectedOutput: '100' },
+    { input: '[2, 3]', expectedOutput: '5' },
+    { input: '[-1, 1]', expectedOutput: '0' },
+    { input: '[10, 90]', expectedOutput: '100' },
   ],
 };
 
 const CODING_PY_EVEN: CuratedCoding = {
-  language: CodingLanguage.PYTHON,
+  language: CodingLanguage.JS,
+  entryFunction: 'countEven',
   starterCode:
-    'def count_even(numbers):\n    # ro\'yxatdagi juft sonlar sonini qaytaring\n    pass\n',
+    'function countEven(numbers) {\n  // juft sonlar sonini qaytaring\n}\n',
   solutionCode:
-    'def count_even(numbers):\n    return sum(1 for n in numbers if n % 2 == 0)\n',
+    'function countEven(numbers) {\n  return numbers.filter((n) => n % 2 === 0).length;\n}\n',
   tests: [
-    { input: '[1, 2, 3, 4]', expectedOutput: '2' },
-    { input: '[2, 4, 6]', expectedOutput: '3' },
-    { input: '[1, 3, 5]', expectedOutput: '0' },
+    { input: '[[1, 2, 3, 4]]', expectedOutput: '2' },
+    { input: '[[2, 4, 6]]', expectedOutput: '3' },
+    { input: '[[1, 3, 5]]', expectedOutput: '0' },
   ],
 };
 
 const CODING_JS_REVERSE: CuratedCoding = {
   language: CodingLanguage.JS,
+  entryFunction: 'reverse',
   starterCode:
     'function reverse(str) {\n  // satrni teskari aylantiring\n}\n',
   solutionCode:
     'function reverse(str) {\n  return str.split("").reverse().join("");\n}\n',
   tests: [
-    { input: 'salom', expectedOutput: 'molas' },
-    { input: 'abc', expectedOutput: 'cba' },
-    { input: 'a', expectedOutput: 'a' },
+    { input: '["salom"]', expectedOutput: '"molas"' },
+    { input: '["abc"]', expectedOutput: '"cba"' },
+    { input: '["a"]', expectedOutput: '"a"' },
   ],
 };
 
 const CODING_JS_SUM_ARR: CuratedCoding = {
   language: CodingLanguage.JS,
+  entryFunction: 'sum',
   starterCode:
     'function sum(arr) {\n  // massiv elementlari yig\'indisini qaytaring\n}\n',
   solutionCode:
     'function sum(arr) {\n  return arr.reduce((acc, n) => acc + n, 0);\n}\n',
   tests: [
-    { input: '[1,2,3]', expectedOutput: '6' },
-    { input: '[10,20]', expectedOutput: '30' },
-    { input: '[]', expectedOutput: '0' },
+    { input: '[[1, 2, 3]]', expectedOutput: '6' },
+    { input: '[[10, 20]]', expectedOutput: '30' },
+    { input: '[[]]', expectedOutput: '0' },
   ],
 };
 
 const CODING_TS_UNIQUE: CuratedCoding = {
   language: CodingLanguage.TS,
+  entryFunction: 'unique',
   starterCode:
     'function unique(arr: number[]): number[] {\n  // takrorlanmas elementlarni qaytaring\n  return [];\n}\n',
   solutionCode:
     'function unique(arr: number[]): number[] {\n  return [...new Set(arr)];\n}\n',
   tests: [
-    { input: '[1,1,2,3]', expectedOutput: '[1,2,3]' },
-    { input: '[5,5,5]', expectedOutput: '[5]' },
+    { input: '[[1, 1, 2, 3]]', expectedOutput: '[1, 2, 3]' },
+    { input: '[[5, 5, 5]]', expectedOutput: '[5]' },
   ],
 };
 

@@ -79,6 +79,6 @@ export interface LessonPreviewResponse {
 }
 
 export interface ProgressDto {
-  positionSeconds: number;
+  positionSeconds?: number;
   completed?: boolean;
 }

@@ -12,6 +12,7 @@ interface Props {
   lesson: LessonDetail;
   currentLessonId: string;
   onLessonHover?: (lessonId: string) => void;
+  onToggleComplete?: (lessonId: string, completed: boolean) => void;
   children: React.ReactNode;
 }
 
@@ -25,6 +26,7 @@ export function LearningShell({
   lesson,
   currentLessonId,
   onLessonHover,
+  onToggleComplete,
   children,
 }: Props) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
@@ -34,6 +36,7 @@ export function LearningShell({
     <div className="flex min-h-screen flex-col">
       <LearningHeader
         courseTitle={lesson.course.title}
+        courseSlug={lesson.course.slug}
         progressPercent={lesson.course.progressPercent}
         onOpenSidebar={openSidebar}
       />
@@ -49,6 +52,7 @@ export function LearningShell({
               completedCount={lesson.course.completedCount}
               totalLessons={lesson.course.totalLessons}
               onLessonHover={onLessonHover}
+              onToggleComplete={onToggleComplete}
             />
           </div>
         </div>
@@ -62,6 +66,7 @@ export function LearningShell({
         completedCount={lesson.course.completedCount}
         totalLessons={lesson.course.totalLessons}
         onLessonHover={onLessonHover}
+        onToggleComplete={onToggleComplete}
       />
     </div>
   );

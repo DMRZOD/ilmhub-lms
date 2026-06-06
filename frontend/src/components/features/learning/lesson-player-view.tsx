@@ -1,15 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import Link from "next/link";
 import { isAxiosError } from "axios";
+import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { useLesson, usePrefetchLesson } from "@/features/learning/hooks";
+import {
+  useLesson,
+  usePrefetchLesson,
+  useToggleLessonComplete,
+} from "@/features/learning/hooks";
 
 import { LearningShell } from "./learning-shell";
+import { ArticleLessonContent } from "./article-lesson-content";
 import { VideoLessonContent } from "./video-lesson-content";
 import { CodingLessonContent } from "./coding/coding-lesson-view";
 import { QuizLessonContent } from "./quiz/quiz-lesson-view";
@@ -30,6 +36,20 @@ export function LessonPlayerView({
   const lessonQuery = useLesson(lessonId);
   const lesson = lessonQuery.data;
   const prefetchLesson = usePrefetchLesson();
+  const toggleComplete = useToggleLessonComplete(lessonId);
+
+  const handleToggleComplete = useCallback(
+    (id: string, completed: boolean) => {
+      toggleComplete.mutate(
+        { lessonId: id, completed },
+        {
+          onError: () =>
+            toast.error("Saqlashda xatolik. Qayta urinib ko'ring."),
+        },
+      );
+    },
+    [toggleComplete],
+  );
 
   // Warm the neighbouring lessons (any type) so prev/next is instant.
   const nextLessonId = lesson?.navigation.nextLessonId;
@@ -61,6 +81,8 @@ export function LessonPlayerView({
       <QuizLessonContent lessonId={lessonId} lesson={lesson} />
     ) : lesson.type === "CODING" ? (
       <CodingLessonContent lessonId={lessonId} lesson={lesson} />
+    ) : lesson.type === "ARTICLE" ? (
+      <ArticleLessonContent lessonId={lessonId} lesson={lesson} />
     ) : (
       <VideoLessonContent
         lessonId={lessonId}
@@ -75,6 +97,7 @@ export function LessonPlayerView({
       lesson={lesson}
       currentLessonId={lessonId}
       onLessonHover={prefetchLesson}
+      onToggleComplete={handleToggleComplete}
     >
       {content}
     </LearningShell>

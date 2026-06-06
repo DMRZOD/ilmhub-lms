@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
-  IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -13,6 +13,9 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+
+/** Only JS/TS exercises can be auto-graded, so authoring is restricted to these. */
+const AUTHORABLE_LANGUAGES = [CodingLanguage.JS, CodingLanguage.TS] as const;
 
 export class CodingTestCaseDto {
   @ApiProperty()
@@ -40,9 +43,14 @@ export class CodingTestCaseDto {
 }
 
 export class UpsertCodingDto {
-  @ApiProperty({ enum: CodingLanguage })
-  @IsEnum(CodingLanguage)
+  @ApiProperty({ enum: AUTHORABLE_LANGUAGES })
+  @IsIn(AUTHORABLE_LANGUAGES)
   language!: CodingLanguage;
+
+  @ApiProperty({ description: 'Function the tests call, e.g. "add".' })
+  @IsString()
+  @MaxLength(120)
+  entryFunction!: string;
 
   @ApiProperty()
   @IsString()

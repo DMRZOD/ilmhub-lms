@@ -404,12 +404,14 @@ model QuizAttempt {
 // ---------- Coding ----------
 
 model CodingExercise {
-  id           String         @id @default(cuid())
-  lessonId     String         @unique
-  language     CodingLanguage
-  starterCode  String         @db.Text
-  solutionCode String         @db.Text
-  tests        Json           @default("[]")
+  id            String         @id @default(cuid())
+  lessonId      String         @unique
+  language      CodingLanguage
+  // Name of the function the tests call (LeetCode-style entry point), e.g. "add".
+  entryFunction String?        @db.Text
+  starterCode   String         @db.Text
+  solutionCode  String         @db.Text
+  tests         Json           @default("[]")
 
   lesson      Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   submissions CodingSubmission[]

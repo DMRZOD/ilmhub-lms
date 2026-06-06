@@ -2,6 +2,10 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import { Pause, Play } from "lucide-react";
+
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 
 const MuxPlayer = dynamic(() => import("@mux/mux-player-react"), {
   ssr: false,
@@ -55,11 +59,23 @@ export const LessonVideoPlayer = React.forwardRef<
   const thresholdFiredRef = React.useRef<boolean>(false);
   const playerRef = React.useRef<MuxMediaElement | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const [isPaused, setIsPaused] = React.useState(true);
 
   React.useEffect(() => {
     thresholdFiredRef.current = false;
     lastReportRef.current = 0;
+    setIsPaused(true);
   }, [playbackId]);
+
+  // Toggle playback for the custom center overlay button. Shared with the
+  // imperative `togglePlay` handle so the spacebar hotkey and the button stay
+  // in lockstep.
+  const togglePlayback = React.useCallback(() => {
+    const el = playerRef.current;
+    if (!el) return;
+    if (el.paused) void el.play();
+    else el.pause();
+  }, []);
 
   const handleTimeUpdate = React.useCallback(
     (event: Event) => {
@@ -95,12 +111,7 @@ export const LessonVideoPlayer = React.forwardRef<
   React.useImperativeHandle(
     ref,
     () => ({
-      togglePlay: () => {
-        const el = playerRef.current;
-        if (!el) return;
-        if (el.paused) void el.play();
-        else el.pause();
-      },
+      togglePlay: togglePlayback,
       toggleMute: () => {
         const el = playerRef.current;
         if (!el) return;
@@ -159,13 +170,13 @@ export const LessonVideoPlayer = React.forwardRef<
         return el.currentTime;
       },
     }),
-    [],
+    [togglePlayback],
   );
 
   return (
     <div
       ref={containerRef}
-      className="overflow-hidden rounded-ilm-3xl bg-ilm-ink"
+      className="group relative overflow-hidden rounded-ilm-3xl bg-ilm-ink"
     >
       <MuxPlayer
         playbackId={playbackId}
@@ -181,8 +192,48 @@ export const LessonVideoPlayer = React.forwardRef<
         streamType="on-demand"
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded}
-        style={{ aspectRatio: "16 / 9", width: "100%" }}
+        // Capture the media element on mount so the custom center button (and
+        // the spacebar hotkey) can start a not-yet-played video — `playerRef`
+        // is otherwise only set once `timeupdate` fires.
+        onLoadedMetadata={(event) => {
+          playerRef.current = event.target as MuxMediaElement;
+        }}
+        onPlay={() => setIsPaused(false)}
+        onPause={() => setIsPaused(true)}
+        // Hide Mux's native center play button; we render our own persistent
+        // overlay instead. (`--center-play-button` is a media-chrome CSS var;
+        // Mux's `style` prop type allows custom properties.)
+        style={{
+          aspectRatio: "16 / 9",
+          width: "100%",
+          "--center-play-button": "none",
+        }}
       />
+
+      {/* Persistent Udemy-style center play/pause control. The wrapper is
+          click-through so Mux's bottom control bar and click-to-toggle gesture
+          keep working — only the button itself captures clicks. */}
+      <div className="pointer-events-none absolute inset-0 grid place-items-center">
+        <button
+          type="button"
+          onClick={togglePlayback}
+          aria-label={isPaused ? "Ijro etish" : "Pauza"}
+          className={cn(
+            "grid size-16 place-items-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-sm transition duration-200 ease-out hover:scale-105 hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80",
+            isPaused
+              ? "pointer-events-auto scale-100 opacity-100"
+              : "pointer-events-none scale-90 opacity-0 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100",
+          )}
+        >
+          <Icon
+            icon={isPaused ? Play : Pause}
+            size={28}
+            strokeWidth={0}
+            fill="currentColor"
+            className={cn("transition-transform", isPaused && "translate-x-0.5")}
+          />
+        </button>
+      </div>
     </div>
   );
 });

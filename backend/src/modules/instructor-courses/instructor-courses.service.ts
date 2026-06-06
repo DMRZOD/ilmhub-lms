@@ -295,9 +295,10 @@ export class InstructorCoursesService {
     );
     await this.prisma.lesson.delete({ where: { id: lessonId } });
     // Free the Mux asset too — otherwise deleted lessons leak assets and
-    // eventually exhaust the plan's asset cap.
+    // eventually exhaust the plan's asset cap. Reference-counted so a shared
+    // asset isn't pulled out from under other lessons still using it.
     if (videoAssetId) {
-      await this.mux.deleteAsset(videoAssetId);
+      await this.deleteMuxAssetIfUnreferenced(videoAssetId);
     }
     await this.normalizeLessonOrders(sectionId);
     await this.recount(courseId);
@@ -342,8 +343,10 @@ export class InstructorCoursesService {
       await this.requireOwnedLesson(lessonId, user);
     // Replacing a video orphans the old asset on Mux; delete it first so we both
     // free a slot (the free plan caps the account at 10 assets) and don't leak.
+    // Reference-counted: assets may be shared across lessons, so only delete
+    // once no *other* lesson still points at it.
     if (previousAssetId) {
-      await this.mux.deleteAsset(previousAssetId);
+      await this.deleteMuxAssetIfUnreferenced(previousAssetId, lessonId);
     }
     const upload = await this.mux.createDirectUpload(corsOrigin, lessonId);
     await this.prisma.lesson.update({
@@ -358,6 +361,26 @@ export class InstructorCoursesService {
     });
     await this.flipPublishedToReview(courseId);
     return { uploadId: upload.uploadId, url: upload.url };
+  }
+
+  /**
+   * Delete a Mux asset only if no lesson still references it. The same asset can
+   * back several lessons (e.g. shared demo videos), so a blind delete on replace
+   * or lesson-removal would break every other lesson pointing at it.
+   */
+  private async deleteMuxAssetIfUnreferenced(
+    assetId: string,
+    exceptLessonId?: string,
+  ) {
+    const stillUsed = await this.prisma.lesson.count({
+      where: {
+        videoAssetId: assetId,
+        ...(exceptLessonId ? { id: { not: exceptLessonId } } : {}),
+      },
+    });
+    if (stillUsed === 0) {
+      await this.mux.deleteAsset(assetId);
+    }
   }
 
   /** PATCH /lessons/:id/content — article body, downloadable resources, preview flag. */

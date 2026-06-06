@@ -1,6 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { learningKeys, studentKeys, coursesKeys } from "@/lib/query-keys";
 
@@ -18,7 +24,30 @@ export function useLesson(id: string | undefined) {
     queryFn: () => fetchLesson(id as string),
     enabled: Boolean(id),
     staleTime: 30 * 1000,
+    // Keep the previous lesson on screen while the next one loads, so switching
+    // lessons never collapses the whole player into a full-screen spinner.
+    placeholderData: keepPreviousData,
   });
+}
+
+/**
+ * Returns a function that warms the cache for a lesson (detail only — the
+ * heavy curriculum payload) so navigating to it is instant. Used for the
+ * next/prev lessons and on sidebar hover.
+ */
+export function usePrefetchLesson() {
+  const qc = useQueryClient();
+  return useCallback(
+    (id: string) => {
+      if (!id) return;
+      void qc.prefetchQuery({
+        queryKey: learningKeys.lesson(id),
+        queryFn: () => fetchLesson(id),
+        staleTime: 30 * 1000,
+      });
+    },
+    [qc],
+  );
 }
 
 export function usePlaybackToken(id: string | undefined) {

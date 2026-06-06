@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GraduationCap, LayoutDashboard, LogOut, Settings } from "lucide-react";
+import {
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  User as UserIcon,
+} from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -88,6 +94,12 @@ export function UserMenu({ user }: { user: User }) {
             </Link>
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem asChild>
+          <Link href={`/u/${user.id}`} className="flex items-center gap-2">
+            <UserIcon className="h-4 w-4" />
+            Profil
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />

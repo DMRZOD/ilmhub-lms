@@ -154,6 +154,10 @@ model User {
   name          String
   bio           String?
   avatarUrl     String?
+  website       String?
+  telegram      String?
+  github        String?
+  twitter       String?
   emailVerified Boolean    @default(false)
   lastLoginAt   DateTime?
   createdAt     DateTime   @default(now())

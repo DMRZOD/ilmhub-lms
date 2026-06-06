@@ -16,4 +16,24 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(2048)
   avatarUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  website?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  telegram?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  github?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  twitter?: string;
 }

@@ -47,6 +47,17 @@ export async function startConversation(
   return data as { id: string };
 }
 
+export async function startConversationWithInstructor(
+  instructorId: string,
+  body?: string,
+): Promise<{ id: string }> {
+  const { data } = await api.post("/messages/conversations/with-instructor", {
+    instructorId,
+    body,
+  });
+  return data as { id: string };
+}
+
 export async function fetchUnreadCount(): Promise<number> {
   const { data } = await api.get("/messages/unread-count");
   return unreadCountSchema.parse(data).count;

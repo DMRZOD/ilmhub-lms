@@ -7,6 +7,10 @@ export type User = {
   role: Role;
   bio?: string | null;
   avatarUrl?: string | null;
+  website?: string | null;
+  telegram?: string | null;
+  github?: string | null;
+  twitter?: string | null;
   emailVerified: boolean;
   createdAt?: string;
   updatedAt?: string;

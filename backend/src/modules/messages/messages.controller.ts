@@ -15,6 +15,7 @@ import { PageQueryDto } from '../../common/dto/pagination.dto';
 import { MessagesService } from './messages.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { StartConversationDto } from './dto/start-conversation.dto';
+import { StartWithInstructorDto } from './dto/start-with-instructor.dto';
 
 @ApiTags('messages')
 @ApiBearerAuth('jwt')
@@ -52,6 +53,22 @@ export class MessagesController {
     @Body() dto: StartConversationDto,
   ) {
     return this.messages.startConversation(instructorId, dto);
+  }
+
+  @Post('conversations/with-instructor')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Start (or find) a conversation with an enrolled course instructor',
+  })
+  startWithInstructor(
+    @CurrentUser('id') studentId: string,
+    @Body() dto: StartWithInstructorDto,
+  ) {
+    return this.messages.startConversationWithInstructor(
+      studentId,
+      dto.instructorId,
+      dto.body,
+    );
   }
 
   @Post('conversations/:id/messages')

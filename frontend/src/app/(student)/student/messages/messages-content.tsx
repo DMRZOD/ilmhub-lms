@@ -1,8 +1,13 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import { Inbox } from "@/components/messages/inbox";
 
 export function StudentMessagesContent() {
+  const searchParams = useSearchParams();
+  const initialConversationId = searchParams.get("c") ?? undefined;
+
   return (
     <div className="flex flex-col gap-sp-6">
       <div className="flex flex-col gap-sp-1">
@@ -13,7 +18,7 @@ export function StudentMessagesContent() {
           Ustozlaringiz bilan yozishmalar
         </p>
       </div>
-      <Inbox />
+      <Inbox initialConversationId={initialConversationId} />
     </div>
   );
 }

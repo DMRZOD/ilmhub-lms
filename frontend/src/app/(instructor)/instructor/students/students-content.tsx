@@ -251,33 +251,36 @@ function StudentDetailSheet({
   return (
     <Sheet open={Boolean(studentId)} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+        <SheetHeader>
+          <div className="flex items-center gap-sp-3">
+            {data && (
+              <Avatar
+                size="md"
+                ink
+                src={data.student.avatarUrl ?? undefined}
+                alt={data.student.name}
+                initials={initialsOf(data.student.name)}
+              />
+            )}
+            <div className="min-w-0">
+              <SheetTitle className="truncate text-left">
+                {data ? data.student.name : "Talaba ma'lumotlari"}
+              </SheetTitle>
+              {data && (
+                <SheetDescription className="truncate text-left">
+                  {data.student.email}
+                </SheetDescription>
+              )}
+            </div>
+          </div>
+        </SheetHeader>
+
         {isLoading ? (
           <PageLoader />
         ) : isError || !data ? (
           <ErrorCard />
         ) : (
-          <>
-            <SheetHeader>
-              <div className="flex items-center gap-sp-3">
-                <Avatar
-                  size="md"
-                  ink
-                  src={data.student.avatarUrl ?? undefined}
-                  alt={data.student.name}
-                  initials={initialsOf(data.student.name)}
-                />
-                <div className="min-w-0">
-                  <SheetTitle className="truncate text-left">
-                    {data.student.name}
-                  </SheetTitle>
-                  <SheetDescription className="truncate text-left">
-                    {data.student.email}
-                  </SheetDescription>
-                </div>
-              </div>
-            </SheetHeader>
-
-            <div className="mt-sp-6 flex flex-col gap-sp-4">
+          <div className="mt-sp-6 flex flex-col gap-sp-4">
               <Button
                 iconLeft={MessageSquarePlus}
                 onClick={() => studentId && onMessage(studentId)}
@@ -313,7 +316,6 @@ function StudentDetailSheet({
                 ))}
               </div>
             </div>
-          </>
         )}
       </SheetContent>
     </Sheet>

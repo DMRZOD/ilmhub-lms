@@ -49,10 +49,10 @@ export function ProfilTab() {
     defaultValues: {
       name: user?.name ?? "",
       bio: user?.bio ?? "",
-      website: "",
-      telegram: "",
-      github: "",
-      twitter: "",
+      website: user?.website ?? "",
+      telegram: user?.telegram ?? "",
+      github: user?.github ?? "",
+      twitter: user?.twitter ?? "",
     },
   });
 
@@ -61,6 +61,10 @@ export function ProfilTab() {
       await updateProfile.mutateAsync({
         name: values.name,
         bio: values.bio ?? "",
+        website: values.website ?? "",
+        telegram: values.telegram ?? "",
+        github: values.github ?? "",
+        twitter: values.twitter ?? "",
       });
       toast.success("Profil saqlandi");
       reset(values);
@@ -172,7 +176,7 @@ export function ProfilTab() {
             Ijtimoiy tarmoqlar
           </legend>
           <p className="text-t-12 text-fg-3">
-            Hozircha faqat ko&apos;rinishda — saqlanmaydi.
+            Bu havolalar ommaviy profilingizda ko&apos;rinadi.
           </p>
 
           <Field icon={Globe} placeholder="https://veb-sayt.uz" {...register("website")} />

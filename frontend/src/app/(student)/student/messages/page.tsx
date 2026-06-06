@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { StudentMessagesContent } from "./messages-content";
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function StudentMessagesPage() {
-  return <StudentMessagesContent />;
+  return (
+    <Suspense fallback={null}>
+      <StudentMessagesContent />
+    </Suspense>
+  );
 }

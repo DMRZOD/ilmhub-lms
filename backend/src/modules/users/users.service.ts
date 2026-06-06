@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -50,6 +51,10 @@ const PUBLIC_USER_SELECT = {
   name: true,
   bio: true,
   avatarUrl: true,
+  website: true,
+  telegram: true,
+  github: true,
+  twitter: true,
   emailVerified: true,
   lastLoginAt: true,
   createdAt: true,
@@ -74,6 +79,10 @@ export class UsersService {
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.bio !== undefined) data.bio = dto.bio;
     if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl;
+    if (dto.website !== undefined) data.website = dto.website;
+    if (dto.telegram !== undefined) data.telegram = dto.telegram;
+    if (dto.github !== undefined) data.github = dto.github;
+    if (dto.twitter !== undefined) data.twitter = dto.twitter;
     if (Object.keys(data).length === 0) {
       const current = await this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
@@ -456,6 +465,88 @@ export class UsersService {
         },
       })),
       recommendedCourses,
+    };
+  }
+
+  /**
+   * Public, anonymous-readable portfolio for any active user: profile basics,
+   * social links, completed courses, earned certificates and achievements.
+   */
+  async getPublicProfile(id: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id, status: 'ACTIVE' },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        website: true,
+        telegram: true,
+        github: true,
+        twitter: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+    if (!user) throw new NotFoundException('profile_not_found');
+
+    const [completedRows, certificateRows, achievementRows] = await Promise.all([
+      this.prisma.enrollment.findMany({
+        where: { userId: id, completedAt: { not: null }, revokedAt: null },
+        orderBy: { completedAt: 'desc' },
+        include: { course: { include: COURSE_CARD_INCLUDE } },
+      }),
+      this.prisma.certificate.findMany({
+        where: { userId: id },
+        orderBy: { issuedAt: 'desc' },
+        select: {
+          id: true,
+          certificateNumber: true,
+          issuedAt: true,
+          pdfUrl: true,
+          course: {
+            select: { id: true, slug: true, title: true, thumbnailUrl: true },
+          },
+        },
+      }),
+      this.prisma.userAchievement.findMany({
+        where: { userId: id },
+        orderBy: { earnedAt: 'desc' },
+        include: { achievement: true },
+      }),
+    ]);
+
+    const completedCourses = completedRows.map((e) => toCourseCard(e.course));
+    const certificates = certificateRows.map((c) => ({
+      id: c.id,
+      certificateNumber: c.certificateNumber,
+      issuedAt: c.issuedAt.toISOString(),
+      pdfUrl: c.pdfUrl,
+      course: c.course,
+    }));
+    const achievements = achievementRows.map((ua) => ({
+      id: ua.id,
+      earnedAt: ua.earnedAt.toISOString(),
+      achievement: {
+        id: ua.achievement.id,
+        code: ua.achievement.code,
+        title: ua.achievement.title,
+        description: ua.achievement.description,
+        iconName: ua.achievement.iconName,
+      },
+    }));
+
+    return {
+      ...user,
+      createdAt: user.createdAt.toISOString(),
+      completedCourses,
+      certificates,
+      achievements,
+      stats: {
+        completedCount: completedCourses.length,
+        certificatesCount: certificates.length,
+        achievementsCount: achievements.length,
+      },
     };
   }
 

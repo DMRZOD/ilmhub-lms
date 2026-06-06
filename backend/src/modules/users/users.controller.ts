@@ -93,4 +93,10 @@ export class UsersController {
     return this.users.getDashboard(userId);
   }
 
+  @Public()
+  @Get(':id/profile')
+  getPublicProfile(@Param('id') id: string) {
+    return this.users.getPublicProfile(id);
+  }
+
 }

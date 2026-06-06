@@ -1,3 +1,8 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { AxiosError } from "axios";
+import { toast } from "sonner";
 import {
   GraduationCap,
   MessageCircle,
@@ -13,7 +18,47 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { formatCompactCount } from "@/lib/format";
+import { useAuth } from "@/features/auth/hooks";
+import { useStartConversationWithInstructor } from "@/features/messages/hooks";
 import type { InstructorDetail } from "@/types/api";
+
+function MessageInstructorButton({ instructorId }: { instructorId: string }) {
+  const router = useRouter();
+  const { data: me } = useAuth();
+  const start = useStartConversationWithInstructor();
+
+  // You can't message yourself.
+  if (me?.id === instructorId) return null;
+
+  async function onClick() {
+    if (!me) {
+      router.push("/login");
+      return;
+    }
+    try {
+      const { id } = await start.mutateAsync({ instructorId });
+      router.push(`/student/messages?c=${id}`);
+    } catch (err) {
+      if (err instanceof AxiosError && err.response?.status === 403) {
+        toast.error("Ustozga yozish uchun uning kursiga yozilishingiz kerak");
+        return;
+      }
+      toast.error("Xabarni boshlab bo'lmadi");
+    }
+  }
+
+  return (
+    <Button
+      variant="secondary"
+      size="md"
+      iconLeft={MessageCircle}
+      onClick={onClick}
+      disabled={start.isPending}
+    >
+      Xabar yozish
+    </Button>
+  );
+}
 
 function StatTile({
   icon,
@@ -63,9 +108,7 @@ export function InstructorHero({ instructor }: { instructor: InstructorDetail })
               <Button variant="primary" size="md" iconLeft={UserPlus}>
                 Kuzatish
               </Button>
-              <Button variant="secondary" size="md" iconLeft={MessageCircle}>
-                Xabar yozish
-              </Button>
+              <MessageInstructorButton instructorId={instructor.id} />
             </div>
           </div>
         </div>

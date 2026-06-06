@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 
 import { getAccessTokenFromCookie } from "@/lib/auth-cookies";
+import { announcementsKeys, messagesKeys } from "@/lib/query-keys";
 import { notificationsQueryKey } from "@/features/student/hooks";
 
 // Thrown for non-retriable failures (e.g. expired token) so the stream stops
@@ -52,11 +53,14 @@ export function useNotificationStream() {
         throw new Error(`stream open failed: ${res.status}`);
       },
       onmessage(ev) {
+        let type: string | undefined;
         try {
           const data = JSON.parse(ev.data) as {
+            type?: string;
             title?: string;
             body?: string;
           };
+          type = data.type;
           if (data.title) {
             toast.info(data.title, {
               description: data.body,
@@ -67,6 +71,13 @@ export function useNotificationStream() {
           // ignore malformed events
         }
         void qc.invalidateQueries({ queryKey: notificationsQueryKey });
+        // Live-refresh the feature views the event touches, so DMs and course
+        // announcements appear instantly instead of waiting on their polling.
+        if (type === "NEW_MESSAGE") {
+          void qc.invalidateQueries({ queryKey: messagesKeys.all });
+        } else if (type === "ANNOUNCEMENT") {
+          void qc.invalidateQueries({ queryKey: announcementsKeys.all });
+        }
       },
       onerror(err) {
         // Fatal: rethrow so fetchEventSource gives up reconnecting.

@@ -4,13 +4,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AnnouncementAudience, NotificationType } from '@prisma/client';
+import { AnnouncementAudience, NotificationType, UserRole } from '@prisma/client';
 
+import type { AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { paginate } from '../../common/dto/pagination.dto';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EnrollmentsService } from '../enrollments/enrollments.service';
 
 @Injectable()
 export class AnnouncementsService {
@@ -18,6 +20,7 @@ export class AnnouncementsService {
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
     private readonly notifications: NotificationsService,
+    private readonly enrollments: EnrollmentsService,
   ) {}
 
   async create(instructorId: string, dto: CreateAnnouncementDto) {
@@ -46,7 +49,18 @@ export class AnnouncementsService {
       throw new BadRequestException('no_recipients');
     }
 
-    const link = `/courses/${course.slug}`;
+    const courseLink = `/courses/${course.slug}`;
+    // Udemy-style: a broadcast (ALL) opens each student's resume lesson with the
+    // announcements tab. Targeted announcements keep the plain course link.
+    const linkByUser =
+      dto.audience === AnnouncementAudience.ALL
+        ? await this.resolveResumeLinks(
+            course.id,
+            recipients.map((r) => r.id),
+            courseLink,
+          )
+        : null;
+    const linkFor = (userId: string) => linkByUser?.get(userId) ?? courseLink;
 
     const announcement = await this.prisma.$transaction(async (tx) => {
       await tx.notification.createMany({
@@ -55,7 +69,7 @@ export class AnnouncementsService {
           type: NotificationType.ANNOUNCEMENT,
           title: dto.subject,
           body: dto.body,
-          link,
+          link: linkFor(r.id),
         })),
       });
 
@@ -85,7 +99,7 @@ export class AnnouncementsService {
         type: NotificationType.ANNOUNCEMENT,
         title: dto.subject,
         body: dto.body,
-        link,
+        link: linkFor(r.id),
       });
     }
     await Promise.all(
@@ -146,5 +160,102 @@ export class AnnouncementsService {
     }));
 
     return paginate(items, total, page, limit);
+  }
+
+  /**
+   * Student-facing read: broadcast (ALL) announcements of a course, newest
+   * first. Targeted (ONE/SELECTED) announcements stay private to notifications.
+   * Readable by the course owner, an admin, or an enrolled student.
+   */
+  async listForCourse(user: AuthenticatedUser, courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, instructorId: true },
+    });
+    if (!course) throw new NotFoundException('course_not_found');
+
+    const isOwnerOrAdmin =
+      user.role === UserRole.ADMIN || user.id === course.instructorId;
+    if (!isOwnerOrAdmin) {
+      const enrolled = await this.enrollments.isUserEnrolled(user.id, courseId);
+      if (!enrolled) throw new ForbiddenException('not_enrolled');
+    }
+
+    const rows = await this.prisma.announcement.findMany({
+      where: { courseId, audience: AnnouncementAudience.ALL },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        subject: true,
+        body: true,
+        createdAt: true,
+        instructor: {
+          select: { id: true, name: true, avatarUrl: true },
+        },
+      },
+    });
+
+    return rows.map((r) => ({
+      id: r.id,
+      subject: r.subject,
+      body: r.body,
+      createdAt: r.createdAt.toISOString(),
+      instructor: r.instructor,
+    }));
+  }
+
+  /**
+   * Resolve, per recipient, the lesson to resume at (first not-completed lesson
+   * by section/lesson order, falling back to the course's first lesson) and
+   * build a deep link into the player with the announcements tab open.
+   * Batched: 2 queries total regardless of recipient count. Mirrors the
+   * semantics of `resolveResumeLessonIds` but keyed by user for one course.
+   */
+  private async resolveResumeLinks(
+    courseId: string,
+    userIds: string[],
+    fallbackLink: string,
+  ): Promise<Map<string, string>> {
+    const [lessons, completed] = await Promise.all([
+      this.prisma.lesson.findMany({
+        where: { section: { courseId } },
+        orderBy: [{ section: { order: 'asc' } }, { order: 'asc' }],
+        select: { id: true },
+      }),
+      this.prisma.lessonProgress.findMany({
+        where: {
+          userId: { in: userIds },
+          completedAt: { not: null },
+          lesson: { section: { courseId } },
+        },
+        select: { userId: true, lessonId: true },
+      }),
+    ]);
+
+    const links = new Map<string, string>();
+    if (lessons.length === 0) {
+      for (const userId of userIds) links.set(userId, fallbackLink);
+      return links;
+    }
+
+    const completedByUser = new Map<string, Set<string>>();
+    for (const row of completed) {
+      let set = completedByUser.get(row.userId);
+      if (!set) {
+        set = new Set<string>();
+        completedByUser.set(row.userId, set);
+      }
+      set.add(row.lessonId);
+    }
+
+    const firstLessonId = lessons[0].id;
+    for (const userId of userIds) {
+      const done = completedByUser.get(userId);
+      const resume = done
+        ? lessons.find((l) => !done.has(l.id))?.id ?? firstLessonId
+        : firstLessonId;
+      links.set(userId, `/lesson/${resume}?tab=elonlar`);
+    }
+    return links;
   }
 }

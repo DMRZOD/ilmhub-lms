@@ -4,7 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 import { STUDENT_NAV_ITEMS, type StudentNavItem } from "./nav-items";
 import { SidebarNav } from "./sidebar-nav";
@@ -32,6 +37,7 @@ export function MobileNav({
         side="left"
         className="flex w-72 flex-col gap-6 bg-ilm-ink p-0 text-white"
       >
+        <SheetTitle className="sr-only">Menyu</SheetTitle>
         <div className="flex items-center gap-3 px-4 pt-6">
           <Link
             href={homeHref}

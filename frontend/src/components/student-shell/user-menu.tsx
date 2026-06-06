@@ -77,7 +77,7 @@ export function StudentUserMenu({ user }: { user: DashboardUser }) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/student/profile" className="flex items-center gap-2">
+          <Link href={`/u/${user.id}`} className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profil
           </Link>

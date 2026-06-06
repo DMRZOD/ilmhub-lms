@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { QaPanel } from "@/components/features/qa/qa-panel";
 import type { LessonDetail } from "@/features/learning/types";
 
+import { AnnouncementsPanel } from "./announcements-panel";
 import { NotesPanel } from "./notes-panel";
 
 interface Props {
@@ -14,15 +15,23 @@ interface Props {
   hasVideo?: boolean;
   getCurrentTime?: () => number | null;
   seekTo?: (seconds: number) => void;
+  initialTab?: string;
 }
 
-export function LessonTabs({ lesson, hasVideo, getCurrentTime, seekTo }: Props) {
+export function LessonTabs({
+  lesson,
+  hasVideo,
+  getCurrentTime,
+  seekTo,
+  initialTab,
+}: Props) {
   return (
-    <Tabs defaultValue="description" className="w-full">
+    <Tabs defaultValue={initialTab ?? "description"} className="w-full">
       <TabsList>
         <TabsTrigger value="description">Tavsif</TabsTrigger>
         <TabsTrigger value="notes">Eslatmalarim</TabsTrigger>
         <TabsTrigger value="qa">Savol-Javob</TabsTrigger>
+        <TabsTrigger value="elonlar">E&apos;lonlar</TabsTrigger>
         <TabsTrigger value="resources">Resurslar</TabsTrigger>
       </TabsList>
 
@@ -57,6 +66,13 @@ export function LessonTabs({ lesson, hasVideo, getCurrentTime, seekTo }: Props) 
         <QaPanel
           courseId={lesson.course.id}
           lessonId={lesson.id}
+          enrolled={lesson.enrolled}
+        />
+      </TabsContent>
+
+      <TabsContent value="elonlar">
+        <AnnouncementsPanel
+          courseId={lesson.course.id}
           enrolled={lesson.enrolled}
         />
       </TabsContent>

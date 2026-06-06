@@ -94,6 +94,18 @@ export const instructorsKeys = {
   detail: (id: string) => [...instructorsKeys.details(), id] as const,
 };
 
+export const announcementsKeys = {
+  all: ["announcements"] as const,
+  course: (courseId: string) =>
+    [...announcementsKeys.all, "course", courseId] as const,
+};
+
+export const profileKeys = {
+  all: ["profile"] as const,
+  details: () => [...profileKeys.all, "detail"] as const,
+  detail: (id: string) => [...profileKeys.details(), id] as const,
+};
+
 export const instructorApplicationKeys = {
   all: ["instructor-application"] as const,
   me: () => [...instructorApplicationKeys.all, "me"] as const,

@@ -6,6 +6,10 @@ export type UpdateProfileInput = {
   name?: string;
   bio?: string;
   avatarUrl?: string;
+  website?: string;
+  telegram?: string;
+  github?: string;
+  twitter?: string;
 };
 
 export async function updateProfile(input: UpdateProfileInput): Promise<User> {

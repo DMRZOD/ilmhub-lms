@@ -54,14 +54,16 @@ interface Props {
   completedCount: number;
   totalLessons: number;
   onLessonClick?: () => void;
+  onLessonHover?: (lessonId: string) => void;
 }
 
-export function LessonSidebar({
+export const LessonSidebar = React.memo(function LessonSidebar({
   sections,
   currentLessonId,
   completedCount,
   totalLessons,
   onLessonClick,
+  onLessonHover,
 }: Props) {
   const defaultOpen = React.useMemo(
     () => sections.map((s) => s.id),
@@ -87,21 +89,24 @@ export function LessonSidebar({
             section={section}
             currentLessonId={currentLessonId}
             onLessonClick={onLessonClick}
+            onLessonHover={onLessonHover}
           />
         ))}
       </Accordion>
     </aside>
   );
-}
+});
 
 function SectionBlock({
   section,
   currentLessonId,
   onLessonClick,
+  onLessonHover,
 }: {
   section: CurriculumSection;
   currentLessonId: string;
   onLessonClick?: () => void;
+  onLessonHover?: (lessonId: string) => void;
 }) {
   const completedInSection = section.lessons.filter((l) => l.completed).length;
   const totalInSection = section.lessons.length;
@@ -126,6 +131,7 @@ function SectionBlock({
                 lesson={lesson}
                 isCurrent={lesson.id === currentLessonId}
                 onClick={onLessonClick}
+                onHover={onLessonHover}
               />
             </li>
           ))}
@@ -139,10 +145,12 @@ function LessonRow({
   lesson,
   isCurrent,
   onClick,
+  onHover,
 }: {
   lesson: CurriculumLesson;
   isCurrent: boolean;
   onClick?: () => void;
+  onHover?: (lessonId: string) => void;
 }) {
   const rowRef = React.useRef<HTMLDivElement>(null);
 
@@ -204,6 +212,7 @@ function LessonRow({
     <Link
       href={`/lesson/${lesson.id}`}
       onClick={onClick}
+      onMouseEnter={() => onHover?.(lesson.id)}
       className="block focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ilm-ink focus-visible:ring-offset-1 focus-visible:ring-offset-ilm-paper"
     >
       {content}

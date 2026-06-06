@@ -158,29 +158,71 @@ export class MessagesService {
     }
 
     // The instructor may only message students enrolled in their courses.
-    const enrollment = await this.prisma.enrollment.findFirst({
-      where: {
-        userId: dto.studentId,
-        course: { instructorId },
-      },
-      select: { id: true },
-    });
-    if (!enrollment) throw new ForbiddenException('student_not_enrolled');
+    if (!(await this.enrollmentLinkExists(instructorId, dto.studentId))) {
+      throw new ForbiddenException('student_not_enrolled');
+    }
 
-    const conv = await this.prisma.conversation.upsert({
-      where: {
-        instructorId_studentId: { instructorId, studentId: dto.studentId },
-      },
-      create: { instructorId, studentId: dto.studentId },
-      update: {},
-      select: { id: true },
-    });
+    const conv = await this.upsertConversation(instructorId, dto.studentId);
 
     if (dto.body && dto.body.trim().length > 0) {
       await this.sendMessage(instructorId, conv.id, dto.body);
     }
 
     return { id: conv.id };
+  }
+
+  /**
+   * Student-initiated DM: a student may open a conversation with an instructor
+   * whose course they are enrolled in. Mirrors `startConversation` with the
+   * roles reversed.
+   */
+  async startConversationWithInstructor(
+    studentId: string,
+    instructorId: string,
+    body?: string,
+  ) {
+    if (instructorId === studentId) {
+      throw new ForbiddenException('cannot_message_self');
+    }
+
+    const instructor = await this.prisma.user.findUnique({
+      where: { id: instructorId },
+      select: { id: true },
+    });
+    if (!instructor) throw new NotFoundException('instructor_not_found');
+
+    if (!(await this.enrollmentLinkExists(instructorId, studentId))) {
+      throw new ForbiddenException('not_enrolled');
+    }
+
+    const conv = await this.upsertConversation(instructorId, studentId);
+
+    if (body && body.trim().length > 0) {
+      await this.sendMessage(studentId, conv.id, body);
+    }
+
+    return { id: conv.id };
+  }
+
+  /** True when the student is enrolled in at least one of the instructor's courses. */
+  private async enrollmentLinkExists(
+    instructorId: string,
+    studentId: string,
+  ): Promise<boolean> {
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: { userId: studentId, course: { instructorId } },
+      select: { id: true },
+    });
+    return Boolean(enrollment);
+  }
+
+  private upsertConversation(instructorId: string, studentId: string) {
+    return this.prisma.conversation.upsert({
+      where: { instructorId_studentId: { instructorId, studentId } },
+      create: { instructorId, studentId },
+      update: {},
+      select: { id: true },
+    });
   }
 
   async sendMessage(userId: string, conversationId: string, body: string) {

@@ -39,60 +39,24 @@ import { cn } from "@/lib/utils";
 import { CodeEditor } from "@/components/features/course-wizard/code-editor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { LearningHeader } from "../learning-header";
-import { LessonSidebar } from "../lesson-sidebar";
-import { LessonSidebarSheet } from "../lesson-sidebar-sheet";
-
 // ---------------------------------------------------------------------------
-// Shell
+// Content column (the learning header + sidebar come from LearningShell)
 // ---------------------------------------------------------------------------
 
-export function CodingLessonView({
+export function CodingLessonContent({
   lessonId,
   lesson,
 }: {
   lessonId: string;
   lesson: LessonDetail;
 }) {
-  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
-
   return (
-    <div className="flex min-h-screen flex-col">
-      <LearningHeader
-        courseTitle={lesson.course.title}
-        progressPercent={lesson.course.progressPercent}
-        onOpenSidebar={() => setMobileSidebarOpen(true)}
-      />
-
-      <div className="mx-auto w-full max-w-[1400px] flex-1 px-sp-4 py-sp-5 sm:px-sp-6">
-        <div className="grid gap-sp-5 lg:grid-cols-[1fr_360px]">
-          <main className="flex min-w-0 flex-col gap-sp-5">
-            <div className="text-t-12 font-bold uppercase tracking-wider text-fg-3">
-              {lesson.section.title}
-            </div>
-            <CodingView lessonId={lessonId} lesson={lesson} />
-          </main>
-
-          <div className="hidden lg:sticky lg:top-[88px] lg:block lg:self-start">
-            <LessonSidebar
-              sections={lesson.course.sections}
-              currentLessonId={lessonId}
-              completedCount={lesson.course.completedCount}
-              totalLessons={lesson.course.totalLessons}
-            />
-          </div>
-        </div>
+    <>
+      <div className="text-t-12 font-bold uppercase tracking-wider text-fg-3">
+        {lesson.section.title}
       </div>
-
-      <LessonSidebarSheet
-        open={mobileSidebarOpen}
-        onOpenChange={setMobileSidebarOpen}
-        sections={lesson.course.sections}
-        currentLessonId={lessonId}
-        completedCount={lesson.course.completedCount}
-        totalLessons={lesson.course.totalLessons}
-      />
-    </div>
+      <CodingView lessonId={lessonId} lesson={lesson} />
+    </>
   );
 }
 

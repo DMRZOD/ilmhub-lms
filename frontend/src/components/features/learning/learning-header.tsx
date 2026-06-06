@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ListChecks } from "lucide-react";
 
@@ -13,7 +14,7 @@ interface Props {
   onOpenSidebar?: () => void;
 }
 
-export function LearningHeader({
+export const LearningHeader = React.memo(function LearningHeader({
   courseTitle,
   progressPercent,
   onOpenSidebar,
@@ -76,4 +77,4 @@ export function LearningHeader({
       </div>
     </header>
   );
-}
+});

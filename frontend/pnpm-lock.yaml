@@ -213,12 +213,18 @@ importers:
       eslint-config-next:
         specifier: 15.5.18
         version: 15.5.18(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3)
+      import-in-the-middle:
+        specifier: ^3.0.1
+        version: 3.0.1
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
       postcss:
         specifier: ^8.5.15
         version: 8.5.15
+      require-in-the-middle:
+        specifier: ^8.0.1
+        version: 8.0.1
       tailwindcss:
         specifier: ^3.4.19
         version: 3.4.19

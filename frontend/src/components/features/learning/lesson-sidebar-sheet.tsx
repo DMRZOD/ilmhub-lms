@@ -18,6 +18,7 @@ interface Props {
   currentLessonId: string;
   completedCount: number;
   totalLessons: number;
+  onLessonHover?: (lessonId: string) => void;
 }
 
 export function LessonSidebarSheet({
@@ -27,6 +28,7 @@ export function LessonSidebarSheet({
   currentLessonId,
   completedCount,
   totalLessons,
+  onLessonHover,
 }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -49,6 +51,7 @@ export function LessonSidebarSheet({
             completedCount={completedCount}
             totalLessons={totalLessons}
             onLessonClick={() => onOpenChange(false)}
+            onLessonHover={onLessonHover}
           />
         </div>
       </SheetContent>

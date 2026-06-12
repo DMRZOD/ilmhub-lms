@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -11,6 +12,7 @@ import { AuditService } from '../audit/audit.service';
 import { paginate } from '../../common/dto/pagination.dto';
 import { ListAdminCoursesDto } from './dto/list-admin-courses.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { buildPublishChecklist } from '../instructor-courses/publish-checklist';
 
 const COURSE_DETAIL_INCLUDE = {
   instructor: {
@@ -126,6 +128,7 @@ export class AdminCoursesService {
     if (course.status === 'PUBLISHED') {
       throw new ConflictException('already_published');
     }
+    await this.assertPublishable(id);
 
     await this.prisma.course.update({
       where: { id },
@@ -222,6 +225,45 @@ export class AdminCoursesService {
   }
 
   // ---------- Helpers ----------
+
+  /**
+   * Re-run the publish checklist before publishing. A structural edit (e.g.
+   * adding a CODING lesson with no exercise) auto-flips a PUBLISHED course back
+   * to PENDING_REVIEW without going through the instructor submitForReview gate,
+   * so without this an incomplete course could be approved straight to live.
+   * Shares the exact rules used by submitForReview via buildPublishChecklist.
+   */
+  private async assertPublishable(id: string) {
+    const course = await this.prisma.course.findUniqueOrThrow({
+      where: { id },
+      select: {
+        title: true,
+        thumbnailUrl: true,
+        description: true,
+        lessonsCount: true,
+        sections: {
+          select: {
+            lessons: {
+              select: {
+                type: true,
+                muxAssetStatus: true,
+                articleContent: true,
+                quiz: { select: { questions: { select: { id: true } } } },
+                codingExercise: { select: { tests: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const missing = buildPublishChecklist(course)
+      .filter((c) => !c.ok)
+      .map((c) => c.key);
+    if (missing.length > 0) {
+      throw new BadRequestException({ error: 'incomplete_course', missing });
+    }
+  }
 
   private async requireCourse(id: string) {
     const course = await this.prisma.course.findUnique({

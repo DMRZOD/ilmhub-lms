@@ -181,6 +181,22 @@ const CODING_TS_UNIQUE: CuratedCoding = {
   ],
 };
 
+// Web-basics themed JS exercise: build an HTML element string from a tag + content.
+// Exported so the backfill script can attach it to the live lesson without a reseed.
+export const CODING_JS_MAKE_TAG: CuratedCoding = {
+  language: CodingLanguage.JS,
+  entryFunction: 'makeTag',
+  starterCode:
+    "function makeTag(tag, content) {\n  // <tag>content</tag> ko'rinishidagi HTML qatorini qaytaring\n}\n",
+  solutionCode:
+    'function makeTag(tag, content) {\n  return `<${tag}>${content}</${tag}>`;\n}\n',
+  tests: [
+    { input: '["p", "Salom"]', expectedOutput: '"<p>Salom</p>"' },
+    { input: '["h1", "Sarlavha"]', expectedOutput: '"<h1>Sarlavha</h1>"' },
+    { input: '["div", ""]', expectedOutput: '"<div></div>"' },
+  ],
+};
+
 // Reusable real quizzes ----------------------------------------------------------
 
 const QUIZ_WEB_BASICS: CuratedQuizQuestion[] = [
@@ -536,6 +552,13 @@ export const CURATED_COURSES: CuratedCourse[] = [
             type: LessonType.QUIZ,
             durationSeconds: 300,
             quiz: { passingScore: 60, questions: QUIZ_WEB_BASICS },
+          },
+          {
+            title: 'Kod mashqi: Web asoslari',
+            type: LessonType.CODING,
+            durationSeconds: 300,
+            description: 'makeTag(tag, content) funksiyasini yozing.',
+            coding: CODING_JS_MAKE_TAG,
           },
         ],
       },

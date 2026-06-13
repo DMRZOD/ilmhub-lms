@@ -20,7 +20,7 @@ const buttonVariants = cva(
         ghost: "bg-transparent text-ilm-ink hover:bg-ilm-surface",
       },
       size: {
-        sm: "h-9 px-3.5 text-t-14 rounded-[10px]",
+        sm: "h-9 px-3.5 text-t-14 rounded-[12px]",
         md: "h-12 px-5 text-t-14 rounded-ilm-md",
         lg: "h-14 px-7 text-t-16 rounded-[14px]",
       },
@@ -39,7 +39,7 @@ const buttonVariants = cva(
       size: "md",
       iconOnly: false,
     },
-  }
+  },
 );
 
 const ICON_SIZE = { sm: 14, md: 18, lg: 20 } as const;
@@ -50,7 +50,8 @@ type ButtonHTMLProps = Omit<
 >;
 
 export interface ButtonProps
-  extends ButtonHTMLProps,
+  extends
+    ButtonHTMLProps,
     Omit<HTMLMotionProps<"button">, "children">,
     VariantProps<typeof buttonVariants> {
   iconLeft?: LucideIcon;
@@ -72,19 +73,28 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       asChild = false,
       ...props
     },
-    ref
+    ref,
   ) => {
     const resolvedSize = size ?? "md";
     const onlyIcon = iconOnly ?? (!children && Boolean(iconLeft ?? iconRight));
     const glyph = ICON_SIZE[resolvedSize];
 
     const classes = cn(
-      buttonVariants({ variant, size: resolvedSize, iconOnly: onlyIcon, className })
+      buttonVariants({
+        variant,
+        size: resolvedSize,
+        iconOnly: onlyIcon,
+        className,
+      }),
     );
 
     if (asChild) {
       return (
-        <Slot ref={ref} className={classes} {...(props as React.HTMLAttributes<HTMLElement>)}>
+        <Slot
+          ref={ref}
+          className={classes}
+          {...(props as React.HTMLAttributes<HTMLElement>)}
+        >
           {children}
         </Slot>
       );
@@ -103,7 +113,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {iconRight && <Icon icon={iconRight} size={glyph} />}
       </motion.button>
     );
-  }
+  },
 );
 Button.displayName = "Button";
 

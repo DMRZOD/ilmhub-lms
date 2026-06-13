@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     // The brand suffix is derived from SITE_NAME so renaming the site is a
     // one-line change in lib/seo/site.ts. Pages set only their short title
     // (e.g. "Kurslar") and this appends " — IlmHub" once.
-    template: `%s — ${SITE_NAME}`,
+    template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
@@ -47,6 +47,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
+  },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
   },
   robots: {
     index: true,

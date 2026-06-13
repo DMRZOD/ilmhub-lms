@@ -143,10 +143,10 @@ export function PublicHeader() {
           ) : (
             <>
               <CartLink count={cartCount} />
-              <Button variant="secondary" size="sm" asChild>
+              <Button variant="secondary" size="sm" className="h-10" asChild>
                 <Link href="/login">Kirish</Link>
               </Button>
-              <Button variant="primary" size="sm" asChild>
+              <Button variant="primary" size="sm" className="h-10" asChild>
                 <Link href="/register">Ro&apos;yxatdan o&apos;tish</Link>
               </Button>
             </>
